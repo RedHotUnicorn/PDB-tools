@@ -10,6 +10,7 @@ storeFolder = os.path.dirname(__file__) + os.sep + "results" + os.sep
 
 
 url = 'https://towardsdatascience.com/building-a-python-cli-tool-to-extract-the-toc-from-markdown-files-ab5a7b9d07f2'
+url = 'https://habr.com/ru/company/skillfactory/blog/721838/'
 
 downloaded = trafilatura.fetch_url(url)
 text=trafilatura.extract(downloaded
