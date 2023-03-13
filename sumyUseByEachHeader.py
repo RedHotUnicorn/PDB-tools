@@ -5,7 +5,7 @@ from sumy.parsers.plaintext import PlaintextParser
 from sumy.nlp.tokenizers import Tokenizer
 from sumy.summarizers.lsa import LsaSummarizer as Summarizer
 from sumy.nlp.stemmers import Stemmer
-from sumy.utils import get_stop_words
+
 
 import json
 import os
@@ -19,6 +19,14 @@ w = open(storeFolder + "sumyUseByEachHeader.md", "w", encoding="utf-8")
 
 
 headers_and_text = json.loads(f.read())
+
+entire_doc=""
+for i in headers_and_text:
+    entire_doc += i["header"]+ '\n'
+    entire_doc += "\n".join(i["text"])
+
+
+
 for i in headers_and_text:
     w.write(i["header"]+ '\n')
     parser = PlaintextParser.from_string("\n".join(i["text"]), Tokenizer(LANGUAGE))
