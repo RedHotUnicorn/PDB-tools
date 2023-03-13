@@ -1,4 +1,4 @@
-
+import json
 import requests
 import trafilatura
 import gensim
@@ -45,6 +45,6 @@ def identify_headers(lines) :
 
     return decompose
 
-f = open(storeFolder + "separateArticleToJSONHeaderAndText.json", "w", encoding="utf-8")
-f.write(str(identify_headers(text.split("\n"))))
+f = open(storeFolder + "separateArticleToJSONHeaderAndText.json", "w", encoding='utf8')
+f.write(json.dumps(identify_headers(text.split("\n")), ensure_ascii=False))
 f.close()
