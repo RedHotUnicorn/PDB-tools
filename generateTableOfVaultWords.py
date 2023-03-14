@@ -1,5 +1,6 @@
 import markdown
 import os
+storeFolder = os.path.dirname(__file__) + os.sep + "results" + os.sep 
 
 
 vaultPath="C:\MyFiles\PKM\PDB"
@@ -16,6 +17,7 @@ def getListFromMetaProp(meta, prop):
     return ret;
     
 
+r = open(storeFolder + "generateTableOfVaultWords.txt", "w", encoding='utf8')
 
 for root, dirs, files in os.walk(vaultPath):
     for file in files:
@@ -31,8 +33,10 @@ for root, dirs, files in os.walk(vaultPath):
             if rg != None: reg_list.extend(rg)
 
             if len(reg_list) != 0:
-                print("item.title_and_desription.search(/(^|[ -])("+ '|'.join(reg_list)  +")([ ,:-]|$)/gmi)>=0 ? item.property_tag.push('"+ str(os.path.splitext(file)[0])  +"') : console.log('so...');")
-                
+                str_reg = "item.title_and_desription.search(/(^|[ -])("+ '|'.join(reg_list)  +")([ ,:-]|$)/gmi)>=0 ? item.property_tag.push('"+ str(os.path.splitext(file)[0])  +"') : console.log('so...');"
+                print(str_reg)
+                r.write(str_reg + '\n')
+r.close()
 
             # if md.Meta != "" and md.Meta!= None and 'aliases' in md.Meta and md.Meta['aliases'] != None:
             #     reg_list = []
