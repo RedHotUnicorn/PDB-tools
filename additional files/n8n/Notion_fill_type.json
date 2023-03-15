@@ -1,0 +1,231 @@
+{
+  "name": "Notion fill type",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Start",
+      "type": "n8n-nodes-base.start",
+      "typeVersion": 1,
+      "position": [
+        60,
+        240
+      ],
+      "id": "4c0a8771-8e2a-454d-a4ad-be105a142043"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": "57c5b12b-7019-466c-bced-93eedae0b0d5",
+        "returnAll": true,
+        "filterType": "manual",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "key": "Res type|select",
+              "condition": "is_empty"
+            },
+            {
+              "key": "URL|url",
+              "condition": "is_not_empty"
+            },
+            {
+              "key": "Done|formula",
+              "condition": "equals",
+              "returnType": "checkbox"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "empty type",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2,
+      "position": [
+        260,
+        240
+      ],
+      "notesInFlow": false,
+      "id": "b4113584-ffb0-44b9-afa5-aecff721b9b9",
+      "credentials": {
+        "notionApi": {
+          "id": "1",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "// Code here will run once per input item.\n// More info and help: https://docs.n8n.io/nodes/n8n-nodes-base.functionItem\n// Tip: You can use luxon for dates and $jmespath for querying JSON structures\n\n// Add a new field called 'myNewField' to the JSON of the item\nitem.property_url.search(/kinopoisk\\.ru/gmi)>=0 && item.property_tag.indexOf(\"Movie\")>=0 \n  ? (item.property_res_type = \"⛓️ link\" , item.property_main_obj_of=\"🎞️ Film\" )\n  : console.log(\"so...\");\n\nitem.property_url.search(/(litres\\.ru|livelib\\.ru)/gmi)>=0 && item.property_tag.indexOf(\"Book\")>=0 \n  ? (item.property_res_type = \"⛓️ link\" , item.property_main_obj_of=\"📘 Book\" )\n  : console.log(\"so...\");\n\nitem.property_url.search(/(youtube\\.com|youtu\\.be)/gmi)>=0 && item.property_tag.indexOf(\"Youtube\")>=0 \n  ? item.property_res_type = \"📼 YouTube\"\n  : console.log(\"so...\");\n\n\nitem.property_url.search(/(yandex\\.ru)/gmi)>=0 && item.property_tag.indexOf(\"Map\")>=0 && (item.property_tag.indexOf(\"Food\")>=0 || item.property_tag.indexOf(\"Booze\")>=0)\n  ? (item.property_res_type = \"⛓️ link\" , item.property_main_obj_of=\"📍 Place\" )\n  : console.log(\"so...\");\n\n\nitem.property_url.search(/(github\\.com)/gmi)>=0 \n  ? item.property_res_type = \"📜 Code\"\n  : console.log(\"so...\");\n\n\nitem.property_url.search(/(t\\.me|zttl\\.space|reddit\\.com)/gmi)>=0\n  ? item.property_res_type = \"💬 forum\" \n  : console.log(\"so...\");\n\n\n  \nitem.property_url.search(/(fedorovpishet\\.ru|habr\\.com|vas3k\\.ru|medium\\.com|vc\\.ru)/gmi)>=0 \n  ? item.property_res_type = \"📰 Web Page / Article\"\n  : console.log(\"so...\");\n\n\n\nitem.property_url.search(/^(http(s)?:\\/\\/)?([a-z0-9][a-z0-9\\-]*\\.)+[a-z0-9][a-z0-9\\-]*\\/?#?$/i)>=0 \n  ? item.property_res_type = \"🛎️ Service / App\"\n  : console.log(\"so...\");\n\n\nreturn item;\n\n"
+      },
+      "name": "find regexp1",
+      "type": "n8n-nodes-base.functionItem",
+      "typeVersion": 1,
+      "position": [
+        480,
+        240
+      ],
+      "id": "3ced09c1-2ac4-41ee-aaf4-807a9d5b83f8"
+    },
+    {
+      "parameters": {
+        "mode": "expression",
+        "output": "={{$json[\"property_res_type\"].length == 0?0:1}}"
+      },
+      "name": "Find Work3",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        680,
+        240
+      ],
+      "id": "bed17719-4928-42c2-b1ad-d03d229fc19d",
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": "={{$json[\"id\"]}}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Res type|select",
+              "selectValue": "={{$json[\"property_res_type\"]}}"
+            }
+          ]
+        }
+      },
+      "name": "set res type",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2,
+      "position": [
+        980,
+        220
+      ],
+      "id": "a6c15a11-1437-456f-9b6b-c2efd973be8d",
+      "credentials": {
+        "notionApi": {
+          "id": "1",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field\n// called 'myNewField' to the JSON of each one\nfor (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\n\nreturn $input.all()[0];"
+      },
+      "id": "13a0cfa9-0ad0-4e81-af0a-28aa176e0d27",
+      "name": "Return 1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        1160,
+        80
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "b5b10db5-7c60-4908-9d80-4d5c09a55d79",
+      "name": "When Called By Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        60,
+        80
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "empty type": {
+      "main": [
+        [
+          {
+            "node": "find regexp1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "find regexp1": {
+      "main": [
+        [
+          {
+            "node": "Find Work3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Work3": {
+      "main": [
+        [
+          {
+            "node": "Return 1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "set res type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "empty type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Called By Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "empty type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "set res type": {
+      "main": [
+        [
+          {
+            "node": "Return 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "8fd145cf-bc6a-424c-a76e-3710d76b51b0",
+  "id": 11,
+  "meta": {
+    "instanceId": "d1fdba25bf7c6bc1df4a23ef2a8b6f6effd0a3156de889abe9ed314a495a5a7a"
+  },
+  "tags": [
+    {
+      "createdAt": "2022-07-23T09:23:03.555Z",
+      "updatedAt": "2022-07-23T09:25:41.548Z",
+      "id": "1",
+      "name": "🚀 production"
+    }
+  ]
+}

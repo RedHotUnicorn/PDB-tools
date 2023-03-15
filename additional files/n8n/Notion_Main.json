@@ -1,0 +1,268 @@
+{
+  "name": "Notion Main",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowId": "13"
+      },
+      "name": "Notion fill youtube url",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        160,
+        360
+      ],
+      "id": "5944963b-ae8d-497a-89a5-636dafddf455",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "workflowId": "12"
+      },
+      "name": "Notion fill tag",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        660,
+        320
+      ],
+      "id": "67496dfe-631c-406a-a433-76546d16a60f"
+    },
+    {
+      "parameters": {
+        "workflowId": "11"
+      },
+      "name": "Notion fill type",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        900,
+        500
+      ],
+      "id": "4087fdfd-fa1e-4052-9b1b-6b71b13a4668"
+    },
+    {
+      "parameters": {
+        "workflowId": "9"
+      },
+      "name": "Notion save subs from youtube",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        700
+      ],
+      "id": "adccaf1a-3238-415e-8d19-ebb09a17df8c"
+    },
+    {
+      "parameters": {
+        "workflowId": "18"
+      },
+      "name": "Notion fill automate_dt",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        200,
+        80
+      ],
+      "id": "ff7c7190-1df3-491c-b0d8-4d444a03443e"
+    },
+    {
+      "parameters": {},
+      "id": "2d044998-06b7-42ed-a0f3-21f9127af451",
+      "name": "On clicking 'execute'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        340,
+        920
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": "13"
+      },
+      "name": "Notion fill youtube url1",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        480,
+        1600
+      ],
+      "id": "09a9981b-41e1-48a9-bb33-92545a3f1e4a",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "workflowId": "12"
+      },
+      "name": "Notion fill tag1",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        780,
+        1320
+      ],
+      "id": "eaf669de-8693-4995-9c26-2c0f7f96aa39"
+    },
+    {
+      "parameters": {
+        "workflowId": "11"
+      },
+      "name": "Notion fill type1",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        1080,
+        1320
+      ],
+      "id": "62d04565-6cdb-41ce-9163-980621f036b4"
+    },
+    {
+      "parameters": {
+        "workflowId": "9"
+      },
+      "name": "Notion save subs from youtube1",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        1320,
+        1320
+      ],
+      "id": "0a3b8e53-7c47-4bf0-8d11-00a5a4e62c92"
+    },
+    {
+      "parameters": {
+        "workflowId": "18"
+      },
+      "name": "Notion fill automate_dt1",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        560,
+        1320
+      ],
+      "id": "ba15c2e1-4b50-4fad-a9e4-7ff9d910bef3"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyHour"
+            }
+          ]
+        },
+        "databaseId": {
+          "__rl": true,
+          "value": "57c5b12b-7019-466c-bced-93eedae0b0d5",
+          "mode": "list",
+          "cachedResultName": "My Links",
+          "cachedResultUrl": "https://www.notion.so/57c5b12b7019466cbced93eedae0b0d5"
+        }
+      },
+      "id": "11de54c8-ad5a-4cfa-b07c-d81dd887b197",
+      "name": "Notion Trigger1",
+      "type": "n8n-nodes-base.notionTrigger",
+      "typeVersion": 1,
+      "position": [
+        280,
+        1320
+      ],
+      "credentials": {
+        "notionApi": {
+          "id": "1",
+          "name": "Notion account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On clicking 'execute'": {
+      "main": [
+        [
+          {
+            "node": "Notion fill automate_dt1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notion fill tag1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notion fill type1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notion save subs from youtube1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Notion fill automate_dt1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion fill automate_dt1": {
+      "main": [
+        [
+          {
+            "node": "Notion fill tag1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion fill tag1": {
+      "main": [
+        [
+          {
+            "node": "Notion fill type1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion fill type1": {
+      "main": [
+        [
+          {
+            "node": "Notion save subs from youtube1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "ce8ed20a-14df-4356-9731-9da8a11f0b12",
+  "id": 10,
+  "meta": {
+    "instanceId": "d1fdba25bf7c6bc1df4a23ef2a8b6f6effd0a3156de889abe9ed314a495a5a7a"
+  },
+  "tags": [
+    {
+      "createdAt": "2022-07-23T09:23:03.555Z",
+      "updatedAt": "2022-07-23T09:25:41.548Z",
+      "id": "1",
+      "name": "🚀 production"
+    }
+  ]
+}

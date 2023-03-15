@@ -1,0 +1,386 @@
+{
+  "name": "Notion fill youtube url",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Start",
+      "type": "n8n-nodes-base.start",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ],
+      "id": "a8b1e860-633f-4b86-a20d-584d8ebaabd4"
+    },
+    {
+      "parameters": {
+        "url": "={{$json[\"name\"]}}",
+        "allowUnauthorizedCerts": true,
+        "responseFormat": "string",
+        "options": {}
+      },
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        640,
+        680
+      ],
+      "id": "aa75d947-95d5-4944-8493-7ed7b5537ad9"
+    },
+    {
+      "parameters": {
+        "extractionValues": {
+          "values": [
+            {
+              "key": "titile",
+              "cssSelector": "title",
+              "returnValue": "html"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "HTML Extract",
+      "type": "n8n-nodes-base.htmlExtract",
+      "typeVersion": 1,
+      "position": [
+        840,
+        680
+      ],
+      "id": "f5f49b5f-e7e9-4f9c-912e-baa894f3575b"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": "={{$json[\"id\"]}}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "URL|url",
+              "urlValue": "={{$json[\"name\"]}}"
+            },
+            {
+              "key": "Name|title",
+              "title": "={{$node[\"HTML Extract\"].json[\"titile\"]}}"
+            },
+            {
+              "key": "Res type|select",
+              "selectValue": "📼 YouTube"
+            }
+          ]
+        }
+      },
+      "name": "Notion1",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2,
+      "position": [
+        1240,
+        560
+      ],
+      "id": "1877fce0-27b1-49e6-a713-465dfd3d9a49",
+      "credentials": {
+        "notionApi": {
+          "id": "1",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": "57c5b12b-7019-466c-bced-93eedae0b0d5",
+        "returnAll": true,
+        "filterType": "manual",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "key": "URL|url",
+              "condition": "contains",
+              "urlValue": "youtu"
+            },
+            {
+              "key": "Res type|select",
+              "condition": "is_empty"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "youtube with no url",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2,
+      "position": [
+        460,
+        300
+      ],
+      "notesInFlow": false,
+      "id": "589e7710-546e-40b2-b508-f287b6e7d91e",
+      "credentials": {
+        "notionApi": {
+          "id": "1",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "DONE просто добавить условие что если ютуб ссылка без тег, значит надо перезапросить название"
+      },
+      "name": "Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        560,
+        100
+      ],
+      "id": "9df3a7fe-0d62-458f-833e-a3137be163e6"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": "57c5b12b-7019-466c-bced-93eedae0b0d5",
+        "returnAll": true,
+        "filterType": "manual",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "key": "Name|title",
+              "condition": "contains",
+              "titleValue": "youtu"
+            },
+            {
+              "key": "tag|multi_select",
+              "condition": "is_empty"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "find youtube url in name",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2,
+      "position": [
+        460,
+        540
+      ],
+      "notesInFlow": false,
+      "id": "9f7155ce-b6f8-4897-9550-f90d27e765c0",
+      "credentials": {
+        "notionApi": {
+          "id": "1",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{$node[\"youtube with no url\"].json[\"property_url\"]}}",
+        "allowUnauthorizedCerts": true,
+        "responseFormat": "string",
+        "options": {}
+      },
+      "name": "HTTP Request1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        660,
+        300
+      ],
+      "id": "b4efae52-6ead-42fb-88ec-dfc313a3ce69"
+    },
+    {
+      "parameters": {
+        "extractionValues": {
+          "values": [
+            {
+              "key": "titile",
+              "cssSelector": "title",
+              "returnValue": "html"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "HTML Extract1",
+      "type": "n8n-nodes-base.htmlExtract",
+      "typeVersion": 1,
+      "position": [
+        860,
+        300
+      ],
+      "id": "95670580-e64c-443b-a1bb-a5961cd8bbd2"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": "={{$node[\"youtube with no url\"].json[\"id\"]}}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "URL|url",
+              "urlValue": "={{$node[\"youtube with no url\"].json[\"property_url\"]}}"
+            },
+            {
+              "key": "Name|title",
+              "title": "={{$node[\"HTML Extract1\"].json[\"titile\"]}}"
+            },
+            {
+              "key": "Res type|select",
+              "selectValue": "📼 YouTube"
+            }
+          ]
+        }
+      },
+      "name": "Notion",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2,
+      "position": [
+        1060,
+        300
+      ],
+      "id": "5d7210d2-20b4-4e98-8612-bc3d46d02a9c",
+      "credentials": {
+        "notionApi": {
+          "id": "1",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "mergeByIndex"
+      },
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        560
+      ],
+      "id": "8d7b3e63-68c4-4cf5-9bc6-74059fe26392"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "HTML Extract",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML Extract": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "youtube with no url": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "youtube with no url",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "find youtube url in name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "HTML Extract1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML Extract1": {
+      "main": [
+        [
+          {
+            "node": "Notion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "find youtube url in name": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Notion1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "38399f07-b974-4bc8-aabe-7cf979661ce8",
+  "id": 13,
+  "meta": {
+    "instanceId": "d1fdba25bf7c6bc1df4a23ef2a8b6f6effd0a3156de889abe9ed314a495a5a7a"
+  },
+  "tags": [
+    {
+      "createdAt": "2022-07-23T09:23:03.555Z",
+      "updatedAt": "2022-07-23T09:25:41.548Z",
+      "id": "1",
+      "name": "🚀 production"
+    }
+  ]
+}
