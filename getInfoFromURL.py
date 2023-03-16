@@ -1,6 +1,7 @@
 import requests
 import trafilatura
 import os
+from bs4 import BeautifulSoup
 
 storeFolder = os.path.dirname(__file__) + os.sep + "results" + os.sep 
 
@@ -18,6 +19,24 @@ if r.status_code == 200:
         print("that not a text")
     else:
         downloaded = trafilatura.fetch_url(url)
+
+        soup = BeautifulSoup(downloaded , "lxml")
+        title = soup.find("meta", property="og:title")
+        title = title["content"] if title else None
+
+        og_description = soup.find("meta", property="og:description")
+        og_description = og_description["content"] if og_description else None
+
+        description = soup.find("meta", property="description")
+        description = description["content"] if description else None
+
+        print(title)
+        print('\n')
+        print(og_description)
+        print('\n')
+        print(description)
+        print('\n')
+
         text=trafilatura.extract(downloaded
         ,include_images=True
         ,include_formatting=True
