@@ -1,88 +1,77 @@
-Бульварное чтиво из 15+1 мемов.
-![](https://habrastorage.org/getpro/habr/upload_files/e87/6b3/14e/e876b314e9359e29433413fc29342e5c.png)
-Мы, разработчики iOS-приложения Додо Пиццы, любим тесты: они дают нам больше уверенности, что ничего не отломалось во время рефакторинга или что только что внедрённая новая фича работает корректно.
-Среди всех тестов, которыми мы пользуемся, есть и скриншот-тесты. Для них используем библиотеку
-[swift-snapshot-testing](https://github.com/pointfreeco/swift-snapshot-testing) от point free. Она проверяет, что вёрстка на экранах случайно никуда не поплыла.
-Скриншот-тесты работают просто:
-Пишем тестовый сьют, который проверяет экран или вьюху.
-Этот тестовый сьют делает скриншот нашей вьюхи и кладёт его в репозиторий. Такой скриншот становится «эталонным». Expected result в терминах тестирования.
-Следующий прогон этого теста снова скриншотит нашу вьюху. Но потом он видит уже существующий эталон в репозитории и понимает, что сейчас надо сравнивать.
-Если два скриншота оказываются идентичными, то тест считается пройденным. Если есть различия — тест заваливается.
-Звучит хорошо, но реальная жизнь даёт по зубам: даже если никак не менять нашу вьюху, скриншоты могут разойтись. Дело в том, что маки на Intel и маки на Apple Silicon по-разному рендерят тени, скругления и прозрачности.
-![Intel / Apple Silicon / разница: зеленое совпало, красное разошлось Intel / Apple Silicon / разница: зеленое совпало, красное разошлось](https://habrastorage.org/getpro/habr/upload_files/b17/150/d82/b17150d82681d8b2808943ab0b147be4.png)
-Мы в команде довольно рано начали закупать маки на Apple Silicon и сразу же столкнулись с этой проблемой.
-Решать проблему как-то надо было, и мы нашли одно возможное решение прямо в используемой нами библиотеке — точность сравнения. При тестировании сказали, что скриншотам можно совпасть лишь на 99%.
-Часть проблем это решило, но не все. Понижать точность ещё сильнее не хотелось, потому что низкая точность могла пропустить реально важную разницу в скриншотах.
-Чтобы решить проблемы до конца, сделали форк библиотеки и докрутили логику сравнения, как нам надо.
-Спустя какое-то время библиотека
-[научилась сама это разруливать](https://github.com/pointfreeco/swift-snapshot-testing/pull/628) и мы оказались перед выбором: оставаться на форке или переезжать на официальную версию библиотеки. Вроде не горит, но там то один апдейт, то другой, и перформанс подкрутили ещё. А в нашем форке при этом есть код сравнения картинок, который может понять только один разработчик из команды — это потенциальный блокер.
-В общем, решили переезжать. Но когда-нибудь потом, не горит же.
-Это история о переезде.
-## 9 января
-![](https://habrastorage.org/getpro/habr/upload_files/d1f/000/7ae/d1f0007ae9c6cf9472c33325791b4f95.png)
-Первый рабочий день в новом году, ничего сложного делать совсем не хочется. Решаю, что вот он, идеальный момент для переезда с форка. Там же только ссылку в пакетном менеджере обновить, делов-то.
-Создаю ветку, обновляю и тут же понимаю, что этого недостаточно: надо обновить ссылку ещё и в
-DBUIKit — нашем UI-модуле, который к Додо Пицце и ещё к нескольким приложениям подключается.
-### 10 января
-Обновляю ссылку в
-DBUIKit, подключаю правильный комит к приложению Додо Пиццы и запускаю обновление зависимостей. Не обновляются.
-Оказывается, библиотека снапшот-тестов перестала поддерживать Carthage. А мы именно так её и подключали.
-![](https://habrastorage.org/getpro/habr/upload_files/5e9/d41/323/5e9d413235295943e445cd4c9e13fb2c.png)
-### 11 января
-Перевожу библиотеку с Carthage на SPM. Запускаю обновление зависимостей. Не обновляются.
-![](https://habrastorage.org/getpro/habr/upload_files/4ef/a9c/e4a/4efa9ce4ad6153c33cb6d84b48df06af.gif)
-Ещё бы: теперь библиотека снапшот-тестов тянется явно через SPM и неявно через Carthage вместе с подключённым через него
-DBUIKit. Значит, надо и
-DBUIKit на SPM перевести.
-### 12 января
-Перевожу DBUIKit на SPM, запускаю обновление зависимостей. Не обновляются.
-![](https://habrastorage.org/getpro/habr/upload_files/79b/bd7/e7e/79bbd7e7eec28732eaff4c6786c30e14.png)
-Оказывается, библиотека
-DBUIKit неявно тянет через SPM за собой один общий модуль. И этот же самый модуль тянется в наше приложение явно через
-Carthage. Хорошо, что этот модуль — легаси, и его уже давно руки чесались выпилить. Выпиливаю. Запускаю обновление зависимостей. Не обновляются.
-Не углядел — оказывается, есть ещё пачка общих модулей, которые за собой тянет DBUIKit через SPM и которые явно ставятся через Carthage. Они ещё не легаси, так что, получается, надо их переводить на SPM. Мы даже хотели это сделать когда-то, просто сейчас чуть пораньше придётся этим заняться.
-### 13 января
-Откладываю ветку, в которой с форка переезжаю. Вместо неё создаю ветку, в которой переезжаю с Carthage на SPM.
-~~Какой русский не любит переезжать в 2023.~~
-Перевожу всё за 10 минут, запускаю обновление зависимостей. Обновляются.
-![](https://habrastorage.org/getpro/habr/upload_files/453/57b/b57/45357bb57d1b9b265a053148d601e6fe.gif)
-Комичу, пушу, создаю пулл-реквест. CI запускает тесты, и они спустя час падают по таймауту. Даже артефакты не сохранились.
-Запускаю тесты локально и вижу картину:
-[Spry](https://github.com/Rivukis/Spry), библиотека для моков, которую мы используем, стала крашить при сравнении объектов. Не тест заваливать, а именно крашить. И при этом вместе с ней крашится и симулятор. Xcode в таком случае перезапускает симулятор и продолжает гонять тесты. Симулятор снова крашит. Xcode снова перезапускает. Симулятор снова крашит. ![](https://habrastorage.org/getpro/habr/upload_files/29f/2d1/dab/29f2d1dab5f9ae11c65839d9e2e52894.png)
-Крашить стали вообще все тесты, в которых эта библиотека сравнивает ожидаемые аргументы функций с актуальными. Тестов таких много. Перезапуск симулятора занимает сколько-то секунд. Вот это вот всё и приводит к тому, что тесты на CI не укладываются в час и падают по таймауту.
-Пытаемся с ребятами понять, почему Spry стал крашить, но не понимаем.
-![](https://habrastorage.org/getpro/habr/upload_files/fc4/f96/ccb/fc4f96ccbf157e0bdc163fd5426196c3.png)
-### 16 января
-В команде Spry не всем нравился. Решили, что раз он стал блокером, то пора его выпиливать. Делаю поиск по проекту, пытаюсь оценить объём работ, охаю. Начинаю придумывать, какие углы можно срезать. Вспоминаю, что крашат только те тесты, где аргументы сравниваются и понимаю, что достаточно переписать только такие.
-### 17 января
-Начинаю переписывать.
-![](https://habrastorage.org/getpro/habr/upload_files/0cd/454/fc8/0cd454fc820ab00730beaa6964e84082.png)
-### 4 февраля
-Заканчиваю переписывать.
-27 пулл-реквестов.
-111 комитов.
-3445 добавленных строк кода.
-5967 удалённых строк кода.
-22 выпитых кофе.
-![](https://habrastorage.org/getpro/habr/upload_files/368/ba3/6a9/368ba36a9c16513bb04ed71a27fa0913.png)
-### 6 февраля
-Возвращаюсь к ветке, в которой переезжаю с форка на оригинальную репу библиотеки снапшот-тестов. Актуализирую до последних изменений в проекте, то есть подливаю выпиленные тесты, которые крашили симулятор. Собираю проект, прогоняю тесты — падают. Ожидаемо — закастомайзенный механизм сравнения скриншотов заменился на другой.
-![](https://habrastorage.org/getpro/habr/upload_files/eae/638/911/eae63891192828ada17d432a0b59b0d7.png)
-### 7 февраля
-Начинаю обновлять тесты, чтобы они использовали новое API для указания точности сравнения.
-### 8 февраля
-Задаюсь вопросом, а почему вообще скриншот-тесты на CI заваливаются — у нас уже и у всех разрабов Apple Silicon, и на CI у нас Apple Silicon, и даже Github Actions Self-Hosted Runner уже Native ARM64. Проверяю гипотезу и убеждаюсь, что даже между M1 и M1 Pro есть разница в рендере.
-![](https://habrastorage.org/getpro/habr/upload_files/822/2ff/9c2/8222ff9c2d65463eba8ac12f68faf44a.gif)
-### 9 февраля
-Заканчиваю обновлять тесты.
-### 10 февраля
-Создаю пулл-реквест со своим переездом на оригинальное репо и с обновлёнными тестами.
-CI запускает тесты и радостно оповещает, что там билд заваливается.
-Нахожу проблему: отсутствует явная линковка между некоторыми нашими модулями, из-за чего сборка может флаковать.
-![](https://habrastorage.org/getpro/habr/upload_files/5e3/44b/6a6/5e344b6a607ab96c17aad5b996e835c5.gif)
-Исправляю линковку в конфиге проекта, комичу, пушу. CI снова запускает тесты. Теперь всё собралось и всё прошло.
-Вливаю.
-![](https://habrastorage.org/getpro/habr/upload_files/c02/391/a97/c02391a979a3da0bb71727ab088f6ddd.png)
-В очередной раз убедился, что простых задач не бывает.
-![](https://habrastorage.org/getpro/habr/upload_files/fef/c9c/401/fefc9c40161aa01df2f3e5305c0321d7.png)
-Морали не будет, мемы закончились, спасибо всем, кто дочитал.
+# How to automatically update n8n-python
+![ How to automatically update n8n-python](/content/images/size/w2000/2022/04/IMG_2587.jpg)
+You followed the instructions from Jan at n8n in
+[this forum post](https://community.n8n.io/t/running-python-with-n8n/5715/3?u=d4vidsha) and now you have a working
+n8n-python image in Docker on a Linux machine. But after every n8n update, you find that you have to redo these set of steps again. Namely,
+docker pull n8nio/n8n
+docker build -t n8n-python .
+But the problem is, you don’t want to do any of this manually. And begin a search to find the best method for automatic updates. Then you come across this page and now you’re invested.
+In this tutorial, you will see how to make this all automatic using Watchtower and a bash script.
+- Create
+Dockerfile
+- Create bash script
+push-updates.sh
+- Set up Portainer
+- Set up Watchtower with Portainer
+- Set up n8n with Portainer
+Firstly, let us navigate to the directory that we want the script to run in. Any directory of your choosing works, as long as it makes sense to you.
+cd ~/docker/n8n
+### 1. Create
+Dockerfile
+Start by creating a
+Dockerfile.
+nano Dockerfile
+In your
+Dockerfile, add the following lines. Line 3 installs the
+[requests](https://docs.python-requests.org/en/latest/) library. You can however add more Python libraries here similarly. Line 4 upgrades pip but it is not necessary.
+FROM n8nio/n8n RUN apk add --update python3 py3-pip # installs requests library RUN python3 -m pip install requests # upgrades pip (not necessary) RUN python3 -m pip install --upgrade pip
+To exit nano
+ctrl + x then
+Y.
+### 2. Create bash script
+push-updates.sh
+In the same directory,
+nano push-updates.sh
+In
+push-updates.sh, add the following lines.
+#!/bin/bash username="pixelcoin" # docker username image_name="n8n-python" # docker image name docker pull n8nio/n8n docker build -t $username/$image_name . docker push $username/$image_name # you may need to set up docker first # with `docker login`.
+There are three commands in here. Firstly, it pulls the latest image of
+n8nio/n8n from Docker’s repository, then builds our
+pixelcoin/n8n-python image, then pushes the new image to Docker’s repository under our username
+pixelcoin.
+Please note that you must be logged in to push to Docker’s repository. In the terminal, run
+docker login and enter your credentials to log in. The username you use will be the same username that gets placed in the
+push-updates.sh file.
+Mark
+push-updates.sh as executable by doing the following command:
+chmod +x push-updates.sh
+Then set up a cronjob to run this script every day. Of course, you can change the frequency to your needs. In your terminal, type in the following to set up a new scheduled run of your script
+crontab -e
+At the end of the file, add
+0 5 * * * /path/to/push-updates.sh
+which will run everyday at 5am. Note that you should change
+/path/to to the path where
+push-updates.sh is stored.
+### 3. Set up Portainer
+We set up Portainer so that we can manage our Docker containers easier. Portainer itself is a docker container. So in your terminal you can run the following command.
+docker run -d -p 9000:9000 --name=portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce:latest
+Now that our container is set up, head over to Portainer in your browser. You will be greeted with a login screen to set up your admin account.
+### 4. Set up Watchtower with Portainer
+After logging into Portainer, navigate to the following.
+![ Markup 2022-04-14 at 17.55.26.png](https://blog.davidsha.me/content/images/2022/04/Markup-2022-04-14-at-17.55.26.png)
+Under “Name”, call stack “watchtower”.
+![ Untitled](https://blog.davidsha.me/content/images/2022/04/Untitled.png)
+In the web editor, add the following.
+version: '2.1' services: watchtower: image: containrrr/watchtower:latest container_name: watchtower volumes: - /var/run/docker.sock:/var/run/docker.sock - /home/pi/.docker/config.json:/config.json environment: - WATCHTOWER_CLEANUP=true - WATCHTOWER_SCHEDULE= 0 0 04 ? * FRI # At 04:00 AM, only on Friday #- WATCHTOWER_NOTIFICATIONS=email #-
+[[email protected]]#- [[email protected]]#- WATCHTOWER_NOTIFICATION_EMAIL_SERVER=smtp.gmail.com #- WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PASSWORD=foo #- WATCHTOWER_NOTIFICATION_EMAIL_SUBJECTTAG=Watchtower Alert - Container Updates #- [[email protected]]#- WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PORT=465 restart: always
+Then at the bottom of the page, “Deploy the stack”.
+This
+docker-compose.yml file which you added via the web editor, will update all docker containers at 4am on Friday every week. You can also receive notifications via email if you know how. This is commented out in the above file.
+### 5. Set up n8n with Portainer
+Now do the same thing but for n8n. In the web editor, you will add this instead.
+version: "2" services: n8n: image: index.docker.io/pixelcoin/n8n-python:latest container_name: n8n volumes: - /PATH/TO/n8n/.n8n:/home/node/.n8n - /PATH/TO/n8n/n8n-files:/files ports: - 5678:5678 restart: always environment: - TZ=Australia/Sydney - GENERIC_TIMEZONE=Australia/Sydney
+Take particular note of the image we are pulling. It must be prefixed by
+index.docker.io/ for it to be recognised properly by Watchtower. Also pay attention to the
+/PATH/TO in volumes section. These will need to be changed to the path which contain your
+.n8n directory and your
+n8n-files directory.
