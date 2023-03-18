@@ -2,6 +2,7 @@ import requests
 import trafilatura
 import os
 from bs4 import BeautifulSoup
+from urllib.parse import urlsplit
 import sqlite3
 import argparse
 
@@ -29,60 +30,73 @@ args = parser.parse_args()
 url = args.url
 n_url = args.n_url
 
-r = requests.head(url, allow_redirects=True)
-if r.status_code == 200:
-    if  "application" in r.headers['Content-Type'] or "image" in r.headers['Content-Type']:
-        print("that not a text")
-    else:
-        downloaded = trafilatura.fetch_url(url)
+try:
+    r = requests.head(url, allow_redirects=True)
+    if r.status_code == 200:
+        if  "application" in r.headers['Content-Type'] or "image" in r.headers['Content-Type']:
+            print("that not a text")
+        else:
+            try:
+                o = urlsplit(url)
+                match o.hostname:
+                    case "t.me":
+                        url+="?embed=1&mode=tme"  
+                    # If an exact match is not confirmed, this last case will be used if provided
+                    case _:
+                        url = url
+                downloaded = trafilatura.fetch_url(url)
 
-        soup = BeautifulSoup(downloaded , "lxml")
-        title = soup.find("meta", property="og:title")
-        title = title["content"] if title else None
+                soup = BeautifulSoup(downloaded , "lxml")
+                # title = soup.find("meta", property="og:title")
+                # title = title["content"] if title else None
 
-        og_description = soup.find("meta", property="og:description")
-        og_description = og_description["content"] if og_description else None
+                # og_description = soup.find("meta", property="og:description")
+                # og_description = og_description["content"] if og_description else None
 
-        description = soup.find("meta", property="description")
-        description = description["content"] if description else None
+                # description = soup.find("meta", property="description")
+                # description = description["content"] if description else None
 
-        type = soup.find("meta", property="og:type")
-        type = type["content"] if type else None
+                type = soup.find("meta", property="og:type")
+                type = type["content"] if type else None
 
-        # print(title)
-        # print('\n')
-        # print(og_description)
-        # print('\n')
-        # print(description)
-        # print('\n')
-        # print(type)
-        # print('\n')
 
-        text=trafilatura.extract(downloaded
-        ,include_images=True
-        ,include_formatting=True
-        # this links creates maybe sometimes a lot of links
-        , include_links=True
-        # ,favor_precision=True
-        , include_comments=True
-        )
-        # print(text)
+                #TODO content-language
 
-        con = sqlite3.connect(storeFolder + "articles.db")
-        cur = con.cursor()
-        # cur.execute("""
-        #     INSERT INTO movie VALUES
-        #         ('Monty Python and the Holy Grail', 1975, 8.2),
-        #         ('And Now for Something Completely Different', 1971, 7.5)
-        # """)
-        data = (url ,n_url,text)
-        try:
-        
-            cur.execute("INSERT INTO articles VALUES(?,?,?)", data)
-            con.commit()  
-        except sqlite3.Error as er:
-            print(url)
-        con.close()
-        # f = open(storeFolder + "getInfoFromURL.md", "w", encoding='utf8')
-        # f.write(text)
-        # f.close()
+                # print(title)
+                # print('\n')
+                # print(og_description)
+                # print('\n')
+                # print(description)
+                # print('\n')
+                # print(type)
+                # print('\n')
+
+                text=trafilatura.extract(downloaded
+                ,include_images=True
+                ,include_formatting=True
+                # this links creates maybe sometimes a lot of links
+                , include_links=True
+                # ,favor_precision=True
+                , include_comments=True
+                )
+                # print(text)
+
+                con = sqlite3.connect(storeFolder + "articles.db")
+                cur = con.cursor()
+
+
+
+                data = (url ,n_url,text,type)
+                try:
+                
+                    cur.execute("INSERT INTO articles VALUES(?,?,?,?)", data)
+                    con.commit()  
+                except sqlite3.Error as er:
+                    print("duplicate")
+                    print(url)
+                con.close()
+
+            except:
+                print("some another error")
+except:
+    print("host unreachable")
