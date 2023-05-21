@@ -48,7 +48,8 @@ for root, dirs, files in os.walk(vaultPath):
 
             if len(reg_list) != 0:
                 note_regexp.append( {"note":str(os.path.splitext(file)[0]) 
-                                    ,"regexp": "/(^|[ -])("+ '|'.join(reg_list)  +")([ ,:-]|$)/gmi" 
+                                    # ,"regexp": "/(^|[ -])("+ '|'.join(reg_list)  +")([ ,:-]|$)/gmi" 
+                                    ,"regexp": '|'.join(reg_list)  
                                     ,"isFileExist":1     })
                 
                 str_reg = "item.title_and_desription.search(/(^|[ -])("+ '|'.join(reg_list)  +")([ ,:-]|$)/gmi)>=0 ? item.property_tag.push('"+ str(os.path.splitext(file)[0])  +"') : console.log('so...');"
