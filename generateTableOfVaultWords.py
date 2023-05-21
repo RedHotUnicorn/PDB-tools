@@ -1,9 +1,21 @@
 import markdown
 import os
+import sqlite3
 storeFolder = os.path.dirname(__file__) + os.sep + "results" + os.sep 
 
 
 vaultPath="C:\MyFiles\PKM\PDB"
+print(storeFolder)
+conn = sqlite3.connect(storeFolder+'articles.db')    
+cursor = conn.cursor() 
+
+
+
+data = cursor.execute(  '''   UPDATE vault_words SET isFileExist=0 
+                        ''')
+conn.commit()
+
+
 
 
 def getListFromMetaProp(meta, prop):
@@ -19,6 +31,8 @@ def getListFromMetaProp(meta, prop):
 
 r = open(storeFolder + "generateTableOfVaultWords.txt", "w", encoding='utf8')
 
+
+note_regexp = []
 for root, dirs, files in os.walk(vaultPath):
     for file in files:
         if file.endswith(".md"):
@@ -33,10 +47,34 @@ for root, dirs, files in os.walk(vaultPath):
             if rg != None: reg_list.extend(rg)
 
             if len(reg_list) != 0:
+                note_regexp.append( {"note":str(os.path.splitext(file)[0]) 
+                                    ,"regexp": "/(^|[ -])("+ '|'.join(reg_list)  +")([ ,:-]|$)/gmi" 
+                                    ,"isFileExist":1     })
+                
                 str_reg = "item.title_and_desription.search(/(^|[ -])("+ '|'.join(reg_list)  +")([ ,:-]|$)/gmi)>=0 ? item.property_tag.push('"+ str(os.path.splitext(file)[0])  +"') : console.log('so...');"
-                print(str_reg)
-                r.write(str_reg + '\n')
+                
+                
+                # print(str_reg)
+                # r.write(str_reg + '\n')
+                
+            
 r.close()
+
+print(note_regexp)
+
+data = cursor.executemany('''   INSERT INTO vault_words (note, regexp, isFileExist)
+                                            VALUES (:note
+                                                    , :regexp
+                                                    , :isFileExist
+                                                    )
+                                            ON CONFLICT(note) 
+                                            DO UPDATE 
+                                                SET regexp = excluded.regexp
+                                                , isFileExist =  excluded.isFileExist
+                    ''',note_regexp)
+conn.commit()
+
+
 
             # if md.Meta != "" and md.Meta!= None and 'aliases' in md.Meta and md.Meta['aliases'] != None:
             #     reg_list = []
