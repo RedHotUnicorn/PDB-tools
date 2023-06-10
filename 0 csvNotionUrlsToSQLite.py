@@ -1,12 +1,9 @@
 import pandas as pd
 
-import requests
-import trafilatura
+
 import os
-from bs4 import BeautifulSoup
-from urllib.parse import urlsplit
 import sqlite3
-import argparse
+
 
 
 storeFolder = os.path.dirname(__file__) + os.sep + "results" + os.sep 

@@ -61,7 +61,7 @@ for root, dirs, files in os.walk(vaultPath):
             
 r.close()
 
-print(note_regexp)
+# print(note_regexp)
 
 data = cursor.executemany('''   INSERT INTO vault_words (note, regexp, isFileExist)
                                             VALUES (:note
