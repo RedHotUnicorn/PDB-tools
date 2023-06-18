@@ -12,7 +12,7 @@ import PDButils as u
 
 
 
-def tryToLoad(url):
+def load_url_text(url):
     text = ""
     type = ""
     try:
@@ -48,8 +48,8 @@ def tryToLoad(url):
                     #TODO content-language
 
                     match o.hostname:
-                        case "youtube.com":
-                                print("test")
+                        case "youtube.com" | 'youtu.be' | "m.youtube.com":
+                            text = u.run_extracting_YT_subs(url)
                         case _:
                             text=trafilatura.extract(   downloaded
                                                         ,include_images=True
@@ -69,49 +69,45 @@ def tryToLoad(url):
     
     
         
-sql_query = pd.read_sql_query ('''
+sql_query = pd.read_sql_query ("""
                                SELECT
                                     url
                                     ,n_url
                                FROM url
                                where url not in (select url
-                                                    from articles where  m_length > 0)
-                               ''', u.DB_CONNECTION)
+                                                    from articles where  m_length > 0)                               
+                               """, u.DB_CONNECTION)
 
 df = pd.DataFrame(sql_query, columns = ['url', 'n_url'])
+print (df)
 
-df[['markdown','og_type']] = df.apply(lambda x: tryToLoad(x.url), axis=1, result_type='expand')
+df[['markdown','og_type']] = df.apply(lambda x: load_url_text(x.url), axis=1, result_type='expand')
 print (df)
 
 try:
-    df.to_sql('temp_articles', u.DB_CONNECTION, if_exists='append', index = False, chunksize = 10000)
+    df.to_sql(
+                'temp_articles'
+                , u.DB_CONNECTION
+                , if_exists='append'
+                , index = False
+                , chunksize = 10000
+            )
     u.DB_CONNECTION.commit()   
 except sqlite3.Error as er:
     print("duplicate")
 
-print(u.DB_CURSOR.execute("select COUNT(*) from temp_articles").fetchall())
+# print(u.DB_CURSOR.execute("select COUNT(*) from temp_articles").fetchall())
 
-data = u.DB_CURSOR.execute('''   
-INSERT OR IGNORE INTO articles (url,n_url,markdown,og_type)
-SELECT url,n_url,markdown,og_type 
-FROM temp_articles
-''')
+data = u.DB_CURSOR.execute( '''   
+                                INSERT OR IGNORE INTO articles (url,n_url,markdown,og_type)
+                                SELECT  url,n_url,markdown,og_type 
+                                FROM    temp_articles
+                            ''')
 u.DB_CONNECTION.commit() 
 
 
 u.DB_CURSOR.execute("""
-DROP table if exists temp_url
-""")
+                        DROP table if exists temp_url
+                    """)
 u.DB_CONNECTION.commit() 
-
 u.DB_CONNECTION.close()
-
-# data = (url ,n_url,text,type)
-# try:
-
-#     cur.execute("INSERT INTO articles VALUES(?,?,?,?)", data)
-#     u.DB_CONNECTION.commit()  
-# except sqlite3.Error as er:
-#     print("duplicate")
-#     print(url)
-# u.DB_CONNECTION.close()
