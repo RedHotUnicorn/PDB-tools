@@ -21,6 +21,7 @@ YT_DLP_FIX_VTT  = r"C:\Program Files\yt-dlp\fix_youtube_vtt.py"
 #     &&  del test.*
 # '''.replace('\n','')
 
+# TODO probably i can use https://github.com/bindestriche/srt_fix
 YT_DLP_GET_SUBS   = rf'''
     chcp 65001 && 
     "{YT_DLP_EXE}" --no-check-certificate --sub-lang "ru,en" --write-auto-sub --write-sub --embed-subs --skip-download -o "test" "{{0}}" 1>nul 
