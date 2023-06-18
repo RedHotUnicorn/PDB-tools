@@ -98,6 +98,10 @@ except sqlite3.Error as er:
 
 # print(u.DB_CURSOR.execute("select COUNT(*) from temp_articles").fetchall())
 
+
+# TODO this is works not right. Should create rule for update markdown
+
+# TODO should I use files instead of DB markdown?
 data = u.DB_CURSOR.execute( '''   
                                 INSERT OR IGNORE INTO articles (url,n_url,markdown,og_type)
                                 SELECT  url,n_url,markdown,og_type 
@@ -105,7 +109,7 @@ data = u.DB_CURSOR.execute( '''
                             ''')
 u.DB_CONNECTION.commit() 
 
-
+# TODO wrong table 
 u.DB_CURSOR.execute("""
                         DROP table if exists temp_url
                     """)
