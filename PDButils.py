@@ -6,9 +6,12 @@ import subprocess
 DEFINE MOST USABLE VARS FOR DB CONNECTION
 
 """
+RESULTS_FOLDER  = os.path.dirname(__file__) + os.sep + "results" + os.sep 
+
+CSV_NOTION      = r'C:\Users\User\Downloads\notion.csv'
+
 DB_FILE_NAME    = "articles.db"
-DB_FILE_FOLDER  = os.path.dirname(__file__) + os.sep + "results" + os.sep 
-DB_CONNECTION   = sqlite3.connect(DB_FILE_FOLDER + DB_FILE_NAME)
+DB_CONNECTION   = sqlite3.connect(RESULTS_FOLDER + DB_FILE_NAME)
 DB_CURSOR       = DB_CONNECTION.cursor()
 
 
@@ -50,6 +53,9 @@ def run_extracting_YT_subs(YT_URL):
                             , stdout=subprocess.PIPE
                             , encoding="utf-8") 
     return res.stdout
+
+
+
 
 
 

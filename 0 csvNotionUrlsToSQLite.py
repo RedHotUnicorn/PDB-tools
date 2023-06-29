@@ -1,61 +1,80 @@
 import pandas as pd
-
-
-import os
 import sqlite3
+import PDButils as u
 
 
+OUTPUT_TBL  = 'url'
+TEMP_TBL    = 'temp_url'
 
-storeFolder = os.path.dirname(__file__) + os.sep + "results" + os.sep 
-csv_path = r'C:\Users\User\Downloads\notion.csv'
+"""
+1. Load data from csv
+2. Calculate shurely property done 
+3. Rename columns for format of table
+"""
 
-df = pd.read_csv(csv_path, usecols = ['property_url','url','property_create_dt','property_done'])
-df['done'] = df.apply(lambda x: 0 if x.property_done == False or  x.property_done == "False" or  x.property_done == ""  else 1 , axis=1 )
-df.drop('property_done', axis=1, inplace=True)
+df          = pd.read_csv(u.CSV_NOTION
+                          , usecols = ['property_url','url','property_create_dt','property_done']
+                          )
+df['done']  = df.apply(lambda x: 0 if x.property_done == False or  x.property_done == "False" or  x.property_done == ""  else 1 
+                       , axis=1 )
+df.drop(    'property_done'
+            , axis=1
+            , inplace=True
+        )
 
-df = df.rename(columns={'property_url': 'url'
-                        , 'url': 'n_url'
-                        , 'property_create_dt': 'dt_crt'
+df = df.rename(columns={    'property_url'          : 'url'
+                            , 'url'                 : 'n_url'
+                            , 'property_create_dt'  : 'dt_crt'
                         })
 
-# print(df.head)
 
-conn = sqlite3.connect(storeFolder + "articles.db")
-cur = conn.cursor()
+"""
+1. Drop temp table  in some case 
+2. Create new one with exact structure as target
+3. Put data into df to temp table 
+"""
 
-cur.execute("""
-DROP table if exists  temp_url;
-""")
-conn.commit() 
+u.DB_CURSOR.execute(f"""
+                    DROP table if exists  {TEMP_TBL};
+                    """)
+u.DB_CONNECTION.commit() 
 
-cur.execute("""
-CREATE TABLE temp_url (
-    n_url  TEXT,
-    url    TEXT,
-    dt_crt TEXT,
-    done   INTEGER
-);""")
-conn.commit() 
-
+u.DB_CURSOR.execute(f"""
+                    CREATE TABLE {TEMP_TBL} (
+                        n_url  TEXT,
+                        url    TEXT,
+                        dt_crt TEXT,
+                        done   INTEGER
+                    );""")
+u.DB_CONNECTION.commit() 
 
 try:
-    df.to_sql('temp_url', conn, if_exists='append', index = False, chunksize = 10000)
-    conn.commit()   
+    df.to_sql(  TEMP_TBL
+                , u.DB_CONNECTION
+                , if_exists ='append'
+                , index     = False
+                , chunksize = 10000
+                , method='multi')
+    u.DB_CONNECTION.commit()   
 except sqlite3.Error as er:
     print("duplicate")
 
-print(cur.execute("select COUNT(*) from temp_url").fetchall())
 
-data = cur.execute('''   
-INSERT OR IGNORE INTO url (url,n_url,dt_crt,done)
-SELECT url,n_url,dt_crt,done 
-FROM temp_url
- ''')
-conn.commit() 
+"""
+1. Finaly insert results from temp table to output
+2. Drop temp table
+"""
 
-cur.execute("""
-DROP table if exists temp_url
-""")
-conn.commit() 
+data = u.DB_CURSOR.execute(f'''   
+                            INSERT OR IGNORE INTO {OUTPUT_TBL} (url,n_url,dt_crt,done)
+                            SELECT url,n_url,dt_crt,done 
+                            FROM {TEMP_TBL} 
+                            ''')
+u.DB_CONNECTION.commit() 
 
-conn.close()
+u.DB_CURSOR.execute(f"""
+                    DROP table if exists {TEMP_TBL} 
+                    """)
+u.DB_CONNECTION.commit() 
+
+u.DB_CONNECTION.close()

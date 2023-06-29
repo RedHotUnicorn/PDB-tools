@@ -9,9 +9,6 @@ import pandas as pd
 import PDButils as u
 
 
-
-
-
 def load_url_text(url):
     text = ""
     type = ""
