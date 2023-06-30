@@ -1,6 +1,7 @@
 import os
 import sqlite3
 import subprocess
+import markdown
 
 """
 DEFINE MOST USABLE VARS FOR DB CONNECTION
@@ -9,6 +10,9 @@ DEFINE MOST USABLE VARS FOR DB CONNECTION
 RESULTS_FOLDER  = os.path.dirname(__file__) + os.sep + "results" + os.sep 
 
 CSV_NOTION      = r'C:\Users\User\Downloads\notion.csv'
+
+VAULT_PATH      = r"C:\MyFiles\PKM\PDB"
+VAULT_CSV_PATH  = VAULT_PATH + os.sep + "CSV" + os.sep 
 
 DB_FILE_NAME    = "articles.db"
 DB_CONNECTION   = sqlite3.connect(RESULTS_FOLDER + DB_FILE_NAME)
@@ -55,7 +59,21 @@ def run_extracting_YT_subs(YT_URL):
     return res.stdout
 
 
+def get_Meta_Property_from_MD(path,file,prop):
+    ret     = None
 
+    f       = open(   os.path.join(path, file), 'r', encoding="utf-8")
+    md      = markdown.Markdown(extensions=['full_yaml_metadata'])
+    md.convert(f.read())
+    
+    if md.Meta !="" and md.Meta!= None:
+        if prop in md.Meta and md.Meta[prop] != None:
+            m_p = md.Meta[prop]
+            if isinstance(m_p, str):
+                m_p = [m_p]
+            ret = list(filter(lambda x: x is not None, m_p))
+    
+    return ret
 
 
 
