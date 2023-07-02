@@ -2,6 +2,8 @@ import os
 import sqlite3
 import subprocess
 import markdown
+from urlextract import URLExtract
+import re
 
 """
 DEFINE MOST USABLE VARS FOR DB CONNECTION
@@ -44,6 +46,9 @@ YT_DLP_GET_SUBS   = rf'''
 
 
 
+URL_REGEXP       = r"((http|https)\:\/\/)?[a-zA-Z0-9\.\/\?\:@\-_=#]+\.([a-zA-Z]{2,6}([a-zA-Z0-9\.\&\/\?\:@\-_=#])*"
+URL_PROP_REGEXP  = r"url::.*"
+
 def run_extracting_YT_subs(YT_URL):
     """
     This functions uses YT_DLP_GET_SUBS as string to be launched with url as params
@@ -75,6 +80,34 @@ def get_Meta_Property_from_MD(path,file,prop):
     
     return ret
 
+
+
+def get_URLs_from_file(path,file):
+    """
+    to test 
+    a = get_URLs_from_file(r'C:\MyFiles\PKM\PDB\1 - 📝  Reference Base','🎥 GTD A guide to Getting Things Done OneStutteringMind.md')
+    a = get_URLs_from_file(r'C:\MyFiles\PKM\PDB\0 - 📥  Inbox','🖼️ Writing is thinking.canvas')
+
+    so first we need to find MAIN url of md or canvas
+    if we found to we can remove all duplicates in this text
+    
+    after that we could find all other urls
+    """
+
+    text                = open(   os.path.join(path, file), 'r', encoding="utf-8").read()
+    extractor           = URLExtract()
+
+    prop_url_find       = re.findall(URL_PROP_REGEXP,text)
+    prop_url            = []
+
+    if prop_url_find:
+        prop_url_search = extractor.find_urls( prop_url_find[0])
+        if prop_url_search:
+            prop_url    = prop_url_search[0]
+    additional_urls     = extractor.find_urls( text.replace(str(prop_url),'') )
+
+
+    return prop_url , additional_urls
 
 
 

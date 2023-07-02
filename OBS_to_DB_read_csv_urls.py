@@ -18,5 +18,10 @@ for root, dirs, files in os.walk(u.VAULT_CSV_PATH):
             tmp['file'] = file
             
             df = df.append(tmp, ignore_index = True)
-
 print(df)
+
+for root, dirs, files in os.walk(u.VAULT_PATH):
+    for file in files:
+        if file.endswith((".md",".canvas")):
+            print(u.get_URLs_from_file(root,file))
+
