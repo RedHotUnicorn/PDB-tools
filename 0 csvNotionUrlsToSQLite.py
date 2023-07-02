@@ -3,7 +3,7 @@ import sqlite3
 import PDButils as u
 
 
-OUTPUT_TBL  = 'url'
+OUTPUT_TBL  = 'NTN_url'
 TEMP_TBL    = 'temp_url'
 
 """

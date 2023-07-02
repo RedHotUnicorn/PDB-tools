@@ -2,10 +2,10 @@ import os
 import PDButils as u
 
 
-OUTPUT_TBL  = 'vault_words'
+OUTPUT_TBL  = 'OBS_termins'
 
 
-data = u.DB_CURSOR.execute( '''   UPDATE vault_words SET isFileExist=0 
+data = u.DB_CURSOR.execute( f'''   UPDATE {OUTPUT_TBL}  SET isFileExist=0 
                             ''')
 u.DB_CONNECTION.commit()
 
