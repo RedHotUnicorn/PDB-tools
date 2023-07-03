@@ -4,6 +4,7 @@ import subprocess
 import markdown
 from urlextract import URLExtract
 import re
+import pandas as pd
 
 """
 DEFINE MOST USABLE VARS FOR DB CONNECTION
@@ -19,6 +20,7 @@ VAULT_CSV_PATH  = VAULT_PATH + os.sep + "CSV" + os.sep
 DB_FILE_NAME    = "articles.db"
 DB_CONNECTION   = sqlite3.connect(RESULTS_FOLDER + DB_FILE_NAME)
 DB_CURSOR       = DB_CONNECTION.cursor()
+DB_ERROR        = sqlite3.Error
 
 
 YT_DLP_EXE      = r"C:\Program Files\yt-dlp\yt-dlp.exe"
@@ -46,7 +48,7 @@ YT_DLP_GET_SUBS   = rf'''
 
 
 
-URL_REGEXP       = r"((http|https)\:\/\/)?[a-zA-Z0-9\.\/\?\:@\-_=#]+\.([a-zA-Z]{2,6}([a-zA-Z0-9\.\&\/\?\:@\-_=#])*"
+URL_REGEXP       = r"https?\:\/\/[a-zA-Z0-9\.\/\?\:@\-_=#]+\.([a-zA-Z]){2,6}([a-zA-Z0-9\.\&\/\?\:@\-_=#])*"
 URL_PROP_REGEXP  = r"url::.*"
 
 def run_extracting_YT_subs(YT_URL):
@@ -105,9 +107,7 @@ def get_URLs_from_file(path,file):
         if prop_url_search:
             prop_url    = prop_url_search[0]
     additional_urls     = extractor.find_urls( text.replace(str(prop_url),'') )
-
+    additional_urls     = [k for k in additional_urls if k.startswith('http')]
 
     return prop_url , additional_urls
-
-
 

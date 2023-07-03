@@ -56,7 +56,7 @@ try:
                 , chunksize = 10000
                 , method='multi')
     u.DB_CONNECTION.commit()   
-except sqlite3.Error as er:
+except u.DB_ERROR as er:
     print("duplicate")
 
 
