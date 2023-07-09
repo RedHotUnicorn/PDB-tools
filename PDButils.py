@@ -20,10 +20,12 @@ config.read(os.path.join(CURR_PY_FOLDER , '_config.ini'))
 
 
 # RESULTS_FOLDER  = os.path.dirname(__file__) + os.sep + "results" + os.sep 
-RESULTS_FOLDER  = os.path.join(CURR_PY_FOLDER , "results"  )
+RESULTS_FOLDER  = os.path.join(CURR_PY_FOLDER , "results"  ) 
 
 # CSV_NOTION      = r'C:\Users\User\Downloads\notion.csv'
 CSV_NOTION      = config['path']['CSV_NOTION']
+DB_ID_NOTION    = config['path']['DB_ID_NOTION']
+AUTH_NOTION     = config['path']['AUTH_NOTION']
 
 
 # VAULT_PATH      = r"C:\MyFiles\PKM\PDB"
@@ -31,7 +33,7 @@ VAULT_PATH      = config['path']['VAULT_PATH']
 VAULT_CSV_PATH  = VAULT_PATH + os.sep + "CSV" + os.sep 
 
 DB_FILE_NAME    = "articles.db"
-DB_CONNECTION   = sqlite3.connect(RESULTS_FOLDER + DB_FILE_NAME)
+DB_CONNECTION   = sqlite3.connect(os.path.join(RESULTS_FOLDER , DB_FILE_NAME))
 DB_CURSOR       = DB_CONNECTION.cursor()
 DB_ERROR        = sqlite3.Error
 
