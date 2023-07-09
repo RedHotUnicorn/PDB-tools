@@ -1,4 +1,5 @@
 import os
+import configparser
 import sqlite3
 import subprocess
 import markdown
@@ -6,15 +7,27 @@ from urlextract import URLExtract
 import re
 import pandas as pd
 
+
+
 """
 DEFINE MOST USABLE VARS FOR DB CONNECTION
 
 """
-RESULTS_FOLDER  = os.path.dirname(__file__) + os.sep + "results" + os.sep 
+CURR_PY_FOLDER  = os.path.dirname(__file__) 
 
-CSV_NOTION      = r'C:\Users\User\Downloads\notion.csv'
+config = configparser.ConfigParser()
+config.read(os.path.join(CURR_PY_FOLDER , '_config.ini'))
 
-VAULT_PATH      = r"C:\MyFiles\PKM\PDB"
+
+# RESULTS_FOLDER  = os.path.dirname(__file__) + os.sep + "results" + os.sep 
+RESULTS_FOLDER  = os.path.join(CURR_PY_FOLDER , "results"  )
+
+# CSV_NOTION      = r'C:\Users\User\Downloads\notion.csv'
+CSV_NOTION      = config['path']['CSV_NOTION']
+
+
+# VAULT_PATH      = r"C:\MyFiles\PKM\PDB"
+VAULT_PATH      = config['path']['VAULT_PATH']
 VAULT_CSV_PATH  = VAULT_PATH + os.sep + "CSV" + os.sep 
 
 DB_FILE_NAME    = "articles.db"
@@ -23,8 +36,11 @@ DB_CURSOR       = DB_CONNECTION.cursor()
 DB_ERROR        = sqlite3.Error
 
 
-YT_DLP_EXE      = r"C:\Program Files\yt-dlp\yt-dlp.exe"
-YT_DLP_FIX_VTT  = r"C:\Program Files\yt-dlp\fix_youtube_vtt.py"
+# YT_DLP_EXE      = r"C:\Program Files\yt-dlp\yt-dlp.exe"
+YT_DLP_EXE      = config['path']['YT_DLP_EXE']
+# YT_DLP_FIX_VTT  = r"C:\Program Files\yt-dlp\fix_youtube_vtt.py"
+YT_DLP_FIX_VTT  = config['path']['YT_DLP_FIX_VTT']
+
 # YT_DLP_GET_SUBS    = rf'''
 #     "{YT_DLP_EXE}" --encoding utf-8 --no-check-certificate --sub-lang "ru,en" --write-auto-sub --write-sub --embed-subs --skip-download -o "test" "{{0}}" 1>nul 
 #     && ( (      if exist test.ru.vtt (py "{YT_DLP_FIX_VTT}" test.ru.vtt && echo **###  Subs RU** && echo:  && type test.ru.*.txt && echo:  )) 
