@@ -23,7 +23,11 @@ query = (
 
 res = pd.DataFrame()
 
-for result in query.execute():
+data = query.execute()
+
+
+for result in data:
+    print(result)
     j = json.loads(result.json(indent=4))
     df = pd.json_normalize(j)
     res = pd.concat((res, df), axis = 0)
