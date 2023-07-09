@@ -6,6 +6,10 @@ import PDButils as u
 OUTPUT_TBL  = 'OBS_url'
 TEMP_TBL    = 'temp_OBS_url'
 
+data = u.DB_CURSOR.execute( f'''   UPDATE {OUTPUT_TBL}  SET isFileExist=0 
+                            ''')
+u.DB_CONNECTION.commit()
+
 df = pd.DataFrame()
 
 for root, dirs, files in os.walk(u.VAULT_CSV_PATH):
@@ -83,12 +87,24 @@ try:
 except u.DB_ERROR as er:
     print("duplicate")
 
+# u.DB_CURSOR.execute(f'''   
+#                             INSERT OR IGNORE INTO {OUTPUT_TBL} (url,type,file)
+#                             SELECT url,type,file
+#                             FROM {TEMP_TBL} 
+#                             ''')
+# u.DB_CONNECTION.commit() 
+
 u.DB_CURSOR.execute(f'''   
-                            INSERT OR IGNORE INTO {OUTPUT_TBL} (url,type,file)
-                            SELECT url,type,file
-                            FROM {TEMP_TBL} 
+                            INSERT INTO {OUTPUT_TBL} (url,type,file)
+                                    SELECT url,type,file
+                                    FROM {TEMP_TBL} 
+                                    /*why where here? https://stackoverflow.com/a/71089998/5353177*/
+                                    WHERE 1
+                                        ON CONFLICT(url,type,file) 
+                                            DO UPDATE 
+                                            SET isFileExist =  1
                             ''')
-u.DB_CONNECTION.commit() 
+u.DB_CONNECTION.commit()
 
 u.DB_CURSOR.execute(f"""
                     DROP table if exists {TEMP_TBL} 
