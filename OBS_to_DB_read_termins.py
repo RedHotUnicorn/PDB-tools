@@ -2,7 +2,7 @@ import os
 import PDButils as u
 
 
-OUTPUT_TBL  = 'OBS_termins'
+OUTPUT_TBL  = 'OBS_term'
 
 
 data = u.DB_CURSOR.execute( f'''   UPDATE {OUTPUT_TBL}  SET isFileExist=0 
