@@ -6,7 +6,7 @@ import markdown
 from urlextract import URLExtract
 import re
 import pandas as pd
-
+from nltk.corpus import stopwords
 
 
 """
@@ -129,3 +129,18 @@ def get_URLs_from_file(path,file):
 
     return prop_url , additional_urls
 
+
+
+
+def extract_stop_words():
+    storeFolder = os.path.join(os.path.dirname(__file__) , "additional files")
+
+    russian_stopwords = stopwords.words("russian")
+    f = open(storeFolder + "russian_stopwords.txt", "w", encoding="utf-8")
+    f.write('\n'.join(map(str, russian_stopwords)))
+    f.close()
+
+    english_stopwords = stopwords.words("english")
+    f = open(storeFolder + "renglish_stopwords.txt", "w", encoding="utf-8")
+    f.write('\n'.join(map(str, english_stopwords)))
+    f.close()
