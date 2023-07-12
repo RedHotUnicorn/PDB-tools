@@ -7,6 +7,7 @@ from urlextract import URLExtract
 import re
 import pandas as pd
 from nltk.corpus import stopwords
+import time
 
 
 """
@@ -81,6 +82,7 @@ def run_extracting_YT_subs(YT_URL):
                             , text=True
                             , stdout=subprocess.PIPE
                             , encoding="utf-8") 
+    time.sleep(5)
     return res.stdout
 
 

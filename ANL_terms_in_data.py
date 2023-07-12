@@ -1,32 +1,26 @@
-import markdown
-import os
 import re
-import sqlite3
-storeFolder = os.path.dirname(__file__) + os.sep + "results" + os.sep 
 
+import PDButils as u
 
-# print(storeFolder)
-conn = sqlite3.connect(storeFolder+'articles.db')    
-cursor = conn.cursor() 
+INPUT_TBL_1 = 'OBS_V_term'
+INPUT_TBL_2 = 'articles'
 
+OUTPUT_TBL = 'f_article_vault_words'
 
-
-
-words = cursor.execute(  '''   select id, regexp from real_vault_words 
-                        ''')
-words = words.fetchall()
-
+words = u.DB_CURSOR.execute(  f'''   select id, regexp from {INPUT_TBL_1} 
+                               ''').fetchall()
 # print(words)
 
-mds = cursor.execute(  '''   select id, markdown from articles where markdown is not null 
-                        ''')
-mds = mds.fetchall()
+mds = u.DB_CURSOR.execute(  ''' select id, markdown 
+                                from {INPUT_TBL_2}  
+                                where markdown is not null 
+                        ''').fetchall()
 
 # print(mds)
 
-data = cursor.execute(  '''   UPDATE f_article_vault_words SET isExist=0 
-                        ''')
-conn.commit()
+data = u.DB_CURSOR.execute(  '''   UPDATE {OUTPUT_TBL} SET isExist=0 
+                            ''')
+u.DB_CONNECTION.commit()
 
 
 for md in mds:
@@ -43,7 +37,7 @@ for md in mds:
             if re.search(my_regex, md_text, re.IGNORECASE|re.MULTILINE):
                 # print(word_regexp)
                 
-                data = cursor.execute('''   INSERT INTO f_article_vault_words (id_article,id_vw,isExist)
+                data = u.DB_CURSOR.execute('''   INSERT INTO {OUTPUT_TBL} (id_article,id_vw,isExist)
                                                             VALUES ('''+ str(md_id) + ', '+ str(word_id) +', '+'1'+'''
                                                                     )
                                                             ON CONFLICT (id_article,id_vw)
@@ -57,4 +51,4 @@ for md in mds:
 
 
 
-conn.commit()
+u.DB_CONNECTION.commit()

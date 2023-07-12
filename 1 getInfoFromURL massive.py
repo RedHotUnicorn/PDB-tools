@@ -8,7 +8,11 @@ import argparse
 import pandas as pd
 import PDButils as u
 
+INPUT_TBL_1     = 'NTN_url'
+INPUT_TBL_2     = 'articles'
 
+OUTPUT_TBL_1    = INPUT_TBL_2
+OUTPUT_TMP      = 'temp_articles'
 def load_url_text(url):
     text = ""
     type = ""
@@ -66,24 +70,24 @@ def load_url_text(url):
     
     
         
-sql_query = pd.read_sql_query ("""
+sql_query = pd.read_sql_query (f"""
                                SELECT
                                     url
                                     ,n_url
-                               FROM url
+                               FROM {INPUT_TBL_1}
                                where url not in (select url
-                                                    from articles where  m_length > 0)                               
+                                                    from {INPUT_TBL_2} where  m_length > 0)                               
                                """, u.DB_CONNECTION)
 
 df = pd.DataFrame(sql_query, columns = ['url', 'n_url'])
-print (df)
+# print (df)
 
 df[['markdown','og_type']] = df.apply(lambda x: load_url_text(x.url), axis=1, result_type='expand')
-print (df)
+# print (df)
 
 try:
     df.to_sql(
-                'temp_articles'
+                OUTPUT_TMP
                 , u.DB_CONNECTION
                 , if_exists='append'
                 , index = False
@@ -99,16 +103,16 @@ except sqlite3.Error as er:
 # TODO this is works not right. Should create rule for update markdown
 
 # TODO should I use files instead of DB markdown?
-data = u.DB_CURSOR.execute( '''   
-                                INSERT OR IGNORE INTO articles (url,n_url,markdown,og_type)
+data = u.DB_CURSOR.execute(f'''   
+                                INSERT OR IGNORE INTO {OUTPUT_TBL_1} (url,n_url,markdown,og_type)
                                 SELECT  url,n_url,markdown,og_type 
-                                FROM    temp_articles
+                                FROM    {OUTPUT_TMP}
                             ''')
 u.DB_CONNECTION.commit() 
 
 # TODO wrong table 
 u.DB_CURSOR.execute("""
-                        DROP table if exists temp_url
+                        DROP table if exists {OUTPUT_TMP}
                     """)
 u.DB_CONNECTION.commit() 
 u.DB_CONNECTION.close()

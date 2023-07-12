@@ -10,11 +10,11 @@ import PDButils as u
 notion = notional.connect(auth=u.AUTH_NOTION)
 db = notion.databases.retrieve(u.DB_ID_NOTION)
 
-print(f"== {db.Title} ==")
+# print(f"== {db.Title} ==")
 
-# print the current schema
-for name, prop in db.properties.items():
-    print(f"{name} => {prop.type}")
+# # print the current schema
+# for name, prop in db.properties.items():
+#     print(f"{name} => {prop.type}")
 
 query = (
     notion.databases.query(u.DB_ID_NOTION)
@@ -27,7 +27,6 @@ data = query.execute()
 
 
 for result in data:
-    print(result)
     j = json.loads(result.json(indent=4))
     df = pd.json_normalize(j)
     res = pd.concat((res, df), axis = 0)
