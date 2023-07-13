@@ -8,7 +8,7 @@ import argparse
 import pandas as pd
 import PDButils as u
 
-INPUT_TBL_1     = 'NTN_url'
+INPUT_TBL_1     = 'NTN_V_url'
 INPUT_TBL_2     = 'content'
 
 OUTPUT_TBL_1    = INPUT_TBL_2
