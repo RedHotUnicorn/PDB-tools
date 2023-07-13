@@ -3,22 +3,22 @@ import re
 import PDButils as u
 
 INPUT_TBL_1 = 'OBS_V_term'
-INPUT_TBL_2 = 'articles'
+INPUT_TBL_2 = 'content'
 
-OUTPUT_TBL = 'f_article_vault_words'
+OUTPUT_TBL = 'term_in_content'
 
 words = u.DB_CURSOR.execute(  f'''   select id, regexp from {INPUT_TBL_1} 
                                ''').fetchall()
 # print(words)
 
-mds = u.DB_CURSOR.execute(  ''' select id, markdown 
-                                from {INPUT_TBL_2}  
-                                where markdown is not null 
+mds = u.DB_CURSOR.execute(  f''' select id, markdown 
+                                 from {INPUT_TBL_2}  
+                                 where markdown is not null 
                         ''').fetchall()
 
 # print(mds)
 
-data = u.DB_CURSOR.execute(  '''   UPDATE {OUTPUT_TBL} SET isExist=0 
+data = u.DB_CURSOR.execute(  f'''   UPDATE {OUTPUT_TBL} SET isExist=0 
                             ''')
 u.DB_CONNECTION.commit()
 
@@ -37,10 +37,9 @@ for md in mds:
             if re.search(my_regex, md_text, re.IGNORECASE|re.MULTILINE):
                 # print(word_regexp)
                 
-                data = u.DB_CURSOR.execute('''   INSERT INTO {OUTPUT_TBL} (id_article,id_vw,isExist)
-                                                            VALUES ('''+ str(md_id) + ', '+ str(word_id) +', '+'1'+'''
-                                                                    )
-                                                            ON CONFLICT (id_article,id_vw)
+                data = u.DB_CURSOR.execute(f'''   INSERT    INTO {OUTPUT_TBL} (id_c,id_t,isExist)
+                                                            VALUES ('''+ str(md_id) + ', '+ str(word_id) +', '+'1'+'''  )
+                                                            ON CONFLICT (id_c,id_t)
                                                             DO UPDATE 
                                                                         SET isExist = excluded.isExist
                                     ''')

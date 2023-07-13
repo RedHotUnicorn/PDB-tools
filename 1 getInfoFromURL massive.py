@@ -9,7 +9,7 @@ import pandas as pd
 import PDButils as u
 
 INPUT_TBL_1     = 'NTN_url'
-INPUT_TBL_2     = 'articles'
+INPUT_TBL_2     = 'content'
 
 OUTPUT_TBL_1    = INPUT_TBL_2
 OUTPUT_TMP      = 'temp_articles'
@@ -72,18 +72,23 @@ def load_url_text(url):
         
 sql_query = pd.read_sql_query (f"""
                                SELECT
-                                    url
-                                    ,n_url
+                                    id
+                                    ,url
                                FROM {INPUT_TBL_1}
-                               where url not in (select url
-                                                    from {INPUT_TBL_2} where  m_length > 0)                               
+                               where id not in (select id
+                                                    from {INPUT_TBL_2} where  m_length > 0)   
+                                --limit 100                        
                                """, u.DB_CONNECTION)
 
-df = pd.DataFrame(sql_query, columns = ['url', 'n_url'])
+df = pd.DataFrame(sql_query, columns = ['id', 'url'])
 # print (df)
 
 df[['markdown','og_type']] = df.apply(lambda x: load_url_text(x.url), axis=1, result_type='expand')
 # print (df)
+
+u.DB_CURSOR.execute(f"""
+                        DROP table if exists {OUTPUT_TMP}
+                    """)
 
 try:
     df.to_sql(
@@ -104,14 +109,18 @@ except sqlite3.Error as er:
 
 # TODO should I use files instead of DB markdown?
 data = u.DB_CURSOR.execute(f'''   
-                                INSERT OR IGNORE INTO {OUTPUT_TBL_1} (url,n_url,markdown,og_type)
-                                SELECT  url,n_url,markdown,og_type 
+                                INSERT INTO {OUTPUT_TBL_1} (id,markdown,og_type)
+                                SELECT  id,markdown,og_type
                                 FROM    {OUTPUT_TMP}
+                                WHERE 1
+                                        ON CONFLICT(id) 
+                                            DO UPDATE 
+                                            SET markdown =   excluded.markdown
+                                            ,og_type =   excluded.og_type
                             ''')
 u.DB_CONNECTION.commit() 
 
-# TODO wrong table 
-u.DB_CURSOR.execute("""
+u.DB_CURSOR.execute(f"""
                         DROP table if exists {OUTPUT_TMP}
                     """)
 u.DB_CONNECTION.commit() 
