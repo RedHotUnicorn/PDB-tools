@@ -15,7 +15,11 @@ TEMP_TBL    = 'temp_url'
 df          = pd.read_csv(u.CSV_NOTION
                           , usecols = ['property_url','url','property_create_dt','property_done']
                           )
-df['done']  = df.apply(lambda x: 0 if x.property_done == False or  x.property_done == "False" or  x.property_done == ""  else 1 
+df['done']  = df.apply(lambda x: 0  if      x.property_done == False 
+                                        or  x.property_done == "False" 
+                                        or  x.property_done == "FALSE" 
+                                        or  x.property_done == ""  
+                                    else 1 
                        , axis=1 )
 df.drop(    'property_done'
             , axis=1
