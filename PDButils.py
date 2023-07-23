@@ -128,6 +128,7 @@ def get_URLs_from_file(path,file):
             prop_url    = prop_url_search[0]
     additional_urls     = extractor.find_urls( text.replace(str(prop_url),'') )
     additional_urls     = [k for k in additional_urls if k.startswith('http')]
+    additional_urls     = [k for k in additional_urls if not k.startswith('https://todoist.com/showTask')]
 
     return prop_url , additional_urls
 
