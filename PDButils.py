@@ -67,8 +67,9 @@ YT_DLP_GET_SUBS   = rf'''
 
 
 
-URL_REGEXP       = r"https?\:\/\/[a-zA-Z0-9\.\/\?\:@\-_=#]+\.([a-zA-Z]){2,6}([a-zA-Z0-9\.\&\/\?\:@\-_=#])*"
-URL_PROP_REGEXP  = r"url::.*"
+URL_REGEXP          = r"https?\:\/\/[a-zA-Z0-9\.\/\?\:@\-_=#]+\.([a-zA-Z]){2,6}([a-zA-Z0-9\.\&\/\?\:@\-_=#])*"
+URL_PROP_REGEXP     = r"url::.*"
+URL_STRIKE_REGEXP   = r"~~\s*" + URL_REGEXP + r"\s*~~"
 
 def run_extracting_YT_subs(YT_URL):
     """
@@ -126,6 +127,14 @@ def get_URLs_from_file(path,file):
         prop_url_search = extractor.find_urls( prop_url_find[0])
         if prop_url_search:
             prop_url    = prop_url_search[0]
+
+    strike_url_find     = re.findall(URL_STRIKE_REGEXP,text)
+    if strike_url_find:
+        strike_ur_search = extractor.find_urls( strike_url_find[0])
+        if strike_ur_search:
+            prop_url    = strike_ur_search[0]
+
+
     additional_urls     = extractor.find_urls( text.replace(str(prop_url),'') )
     additional_urls     = [k for k in additional_urls if k.startswith('http')]
     additional_urls     = [k for k in additional_urls if not k.startswith('https://todoist.com/showTask')]
