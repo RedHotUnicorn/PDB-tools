@@ -136,11 +136,14 @@ def get_URLs_from_file(path,file):
     if strike_url_find:
         strike_ur_search = extractor.find_urls( str(strike_url_find))
         if strike_ur_search:
-            res_url["done"].append(strike_ur_search)
+            res_url["done"].extend(strike_ur_search)
 
     # https://gist.github.com/bgusach/a967e0587d6e01e889fd1d776c5f3729
+    # https://stackoverflow.com/a/55889140/5353177
+    [text := text.replace(x, '') for x in prop_url_find]
+    [text := text.replace(x, '') for x in strike_url_find]
 
-    additional_urls     = extractor.find_urls( text.replace(str(res_url["prop"]),'') )
+    additional_urls     = extractor.find_urls( text )
     additional_urls     = [k for k in additional_urls if k.startswith('http')]
     additional_urls     = [k for k in additional_urls if not k.startswith('https://todoist.com/showTask')]
 
