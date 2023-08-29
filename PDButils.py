@@ -127,8 +127,6 @@ def get_URLs_from_file(path,file):
     res_url["located"]  = []  
 
     prop_url_find       = re.findall(URL_PROP_REGEXP,text)
-
-
     if prop_url_find:
         prop_url_search = extractor.find_urls( prop_url_find[0])
         if prop_url_search:
