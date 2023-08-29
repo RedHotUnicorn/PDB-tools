@@ -37,14 +37,14 @@ for root, dirs, files in os.walk(u.VAULT_PATH):
         if file.endswith((".md",".canvas")) and not(file.endswith(".excalidraw.md")):
             urls_tpl = u.get_URLs_from_file(root,file)
             
-            if urls_tpl[0]:
-                tmp = pd.DataFrame(data=[[urls_tpl[0]]] ,columns=['url'])
+            if len(urls_tpl["prop"]):
+                tmp = pd.DataFrame(data=urls_tpl["prop"]   ,columns=['url'])
                 tmp['type'] = 'prop'
                 tmp['file'] = file
                 # df = df.concat(tmp, ignore_index = True)
                 df = pd.concat((df, tmp), axis = 0)
-            if urls_tpl[1]:
-                tmp = pd.DataFrame(data=urls_tpl[1]     ,columns=['url'])
+            if len(urls_tpl["located"]):
+                tmp = pd.DataFrame(data=urls_tpl["located"]     ,columns=['url'])
                 tmp['type'] = 'text'
                 tmp['file'] = file
                 # df = df.concat(tmp, ignore_index = True)

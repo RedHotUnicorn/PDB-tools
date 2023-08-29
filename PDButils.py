@@ -67,10 +67,11 @@ YT_DLP_GET_SUBS   = rf'''
 
 
 
-URL_REGEXP          = r"https?\:\/\/[a-zA-Z0-9\.\/\?\:@\-_=#]+\.([a-zA-Z]){2,6}([a-zA-Z0-9\.\&\/\?\:@\-_=#])*"
+URL_REGEXP          = r"https?\:\/\/[a-zA-Z0-9\.\/\?\:@\-_=#]+\.(?:[a-zA-Z]){2,6}(?:[a-zA-Z0-9\.\&\/\?\:@\-_=#])*"
 URL_PROP_REGEXP     = r"url::.*"
-URL_STRIKE_REGEXP   = r"~~\s*" + URL_REGEXP + r"\s*~~"
-
+# URL_STRIKE_REGEXP   = r"~~\s*" + URL_REGEXP + r"\s*~~"
+URL_STRIKE_REGEXP   = r"\~\~\s*\[.*\]\(https?\:\/\/[a-zA-Z0-9\.\/\?\:@\-_=#]+\.(?:[a-zA-Z]){2,6}(?:[a-zA-Z0-9\.\&\/\?\:@\-_=#])*\)\s*\~\~"
+URL_STRIKE_REGEXP   = r"\~\~\s*\[.*\]\("+ URL_REGEXP +r"\)\s*\~\~"
 def run_extracting_YT_subs(YT_URL):
     """
     This functions uses YT_DLP_GET_SUBS as string to be launched with url as params
@@ -120,27 +121,34 @@ def get_URLs_from_file(path,file):
     text                = open(   os.path.join(path, file), 'r', encoding="utf-8").read()
     extractor           = URLExtract()
 
+    res_url             = {}
+    res_url["prop"]     = []  
+    res_url["done"]     = [] 
+    res_url["located"]  = []  
+
     prop_url_find       = re.findall(URL_PROP_REGEXP,text)
-    prop_url            = []
+
 
     if prop_url_find:
         prop_url_search = extractor.find_urls( prop_url_find[0])
         if prop_url_search:
-            prop_url    = prop_url_search[0]
+            res_url["prop"].append(prop_url_search[0])
 
     strike_url_find     = re.findall(URL_STRIKE_REGEXP,text)
     if strike_url_find:
-        strike_ur_search = extractor.find_urls( strike_url_find[0])
+        strike_ur_search = extractor.find_urls( str(strike_url_find))
         if strike_ur_search:
-            prop_url    = strike_ur_search[0]
+            res_url["done"].append(strike_ur_search)
 
 
-    additional_urls     = extractor.find_urls( text.replace(str(prop_url),'') )
+    additional_urls     = extractor.find_urls( text.replace(str(res_url["prop"]),'') )
     additional_urls     = [k for k in additional_urls if k.startswith('http')]
     additional_urls     = [k for k in additional_urls if not k.startswith('https://todoist.com/showTask')]
 
-    return prop_url , additional_urls
+    res_url["located"]  = additional_urls
 
+    # return prop_url , additional_urls
+    return res_url
 
 
 
