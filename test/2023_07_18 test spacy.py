@@ -446,16 +446,62 @@ _«В жизни есть только две проблемы: вы знает�
 
 **(Просмотрено: 177, сегодня: 1)**
 """
+import trafilatura
 import csv
 import spacy
 from   spacy import displacy
+
+url="https://microsoft.github.io/lida/"
+url = "https://habr.com/ru/articles/696274/"
+# url ="https://rxresu.me/"
+# url = "https://stackoverflow.com/a/69178995"
+
+downloaded = trafilatura.fetch_url(url)
+
+
+f = open("ini.html", "w")
+f.write(downloaded)
+f.close()
+
+
+
+
+# 
+# https://github.com/adbar/trafilatura/issues/351
+sent=trafilatura.extract(downloaded.replace("</code>", "</code>\n```").replace("<code", "```\n<code")
+	#, output_format='xml'
+# ,include_images=True
+ ,include_formatting=True
+, include_links=True
+# ,favor_precision=True
+,include_comments=True
+)
+
+f = open("rep.html", "w")
+f.write(downloaded)
+f.close()
+# .replace("</code>", "'''").replace("<code>", "'''")
+
+# sent=trafilatura.extract(sent)
+
+# sent=trafilatura.html2txt(downloaded)
+
+
+
+
+
+f = open("1.md", "w")
+f.write(sent)
+f.close()
 
 
 
 
 nlp = spacy.load('ru_core_news_md')
 nlp=spacy.load('xx_sent_ud_sm')
-nlp=spacy.load('ru_core_news_lg')
+# nlp=spacy.load('ru_core_news_lg') 
+# nlp=spacy.load('en_core_web_lg') 
+nlp=spacy.load('en_core_web_trf') 
 
 doc=nlp(sent)
 
@@ -478,9 +524,8 @@ with open('spacy.csv', 'w', newline='',encoding='utf-8') as csvfile:
 	print("{0:20}{1:20}{2:20}{3:20}{4:20}{5:20}{6:20}{7:20}".format("token.text", "token.lemma_"," token.pos_"," token.tag_"," token.dep_","token.shape_"," token.is_alpha"," token.is_stop"))
 	for token in doc:
 		if (token.pos_ != "SPACE"):
-	   		print("{0:20}{1:20}{2:20}{3:20}{4:20}{5:20}{6:20}{7:20}".format(token.text, token.lemma_, token.pos_, token.tag_, token.dep_,
-	            token.shape_, token.is_alpha, token.is_stop))
-	   		spamwriter.writerow([token.text, token.lemma_, token.pos_, token.tag_, token.dep_,token.shape_, token.is_alpha, token.is_stop])
+			print("{0:20}{1:20}{2:20}{3:20}{4:20}{5:20}{6:20}{7:20}".format(token.text, token.lemma_, token.pos_, token.tag_, token.dep_,token.shape_, token.is_alpha, token.is_stop))
+			spamwriter.writerow([token.text, token.lemma_, token.pos_, token.tag_, token.dep_,token.shape_, token.is_alpha, token.is_stop])
 
 print("--"*60)
 
@@ -503,3 +548,6 @@ ranked_phrases = rake.get_ranked_phrases()
 
 print("rake_nltk") 
 print(ranked_phrases)
+
+
+# https://stackoverflow.com/questions/64111377/remove-markdown-code-block-from-python-string
