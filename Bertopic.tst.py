@@ -55,12 +55,20 @@ df_docs = pd.DataFrame(sql_query, columns = ['id', 'markdown']).replace(r"\[(.+)
 df_docs['sent'] = df_docs['markdown'].apply(convert_to_plain_text).apply(expl_sent)
 df_docs=df_docs.explode('sent')
 
+def lemmatize(text: str):
+     doc = nlp(text.lower())
+     lemmas = []
+     for token in doc:
+          lemmas.append(token.lemma_)
+     return lemmas
+
+
 print(df_docs)
 
 
 ctfidf_model = ClassTfidfTransformer(reduce_frequent_words=True)
 my_stopwords = stopwords.words("russian")
-vectorizer_model = CountVectorizer(stop_words=my_stopwords)
+vectorizer_model = CountVectorizer(stop_words=my_stopwords,tokenizer=lemmatize)
 
 topic_model = BERTopic(language="multilingual"
                        ,ctfidf_model=ctfidf_model
