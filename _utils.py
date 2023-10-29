@@ -262,7 +262,7 @@ def base_link_to_gold_link(base_link):
     return gold_link
 
 # import requests
-# response = requests.head('https://m.youtube.com/playlist?list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL', allow_redirects=True)
+# response = requests.head('https://m.youtube.com/playlist?list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL', allow_redirects=True) # https://stackoverflow.com/questions/70560247/bypassing-eu-consent-request
 # for resp in response.history :
 #     if "https://consent." not in resp.url:
 #         print(resp.status_code, resp.url)
