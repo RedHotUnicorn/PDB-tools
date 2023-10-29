@@ -210,6 +210,7 @@ import w3lib.url
 import urlexpander
 from url_normalize import url_normalize
 import urllib.parse
+import requests
 
 REMOVE_PARAMS_ARRAY = [
       'utm_campaign'
@@ -221,9 +222,33 @@ REMOVE_PARAMS_ARRAY = [
 ]
 
 
-STRICT_PARAMS_DICT = {
+STRICT_PARAMS_DICT  = {
       "www.youtube.com" :['v', 'list','t']
 }
+
+EXCL_REDIR_ARRAY    = [
+      "https://consent."
+    # , "www."
+]
+
+def link_expand(link):
+    """
+    1. get req with redirects
+    2. get last redirect after excluding "wrong" redirects.
+
+    Example:
+    - https://m.youtube.com/playlist?list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL
+    V
+    - https://www.youtube.com/playlist?app=desktop&list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL
+    V
+    - https://consent.youtube.com/ml?continue=https://www.youtube.com/playlist?app%3Ddesktop%26list%3DPL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL%26cbrd%3D1&gl=DE&hl=de&cm=2&pc=yt&src=1
+    
+    the last one is not nessesary. so we need exclude it
+    """
+    response = requests.head(link, allow_redirects=True)                                 # https://stackoverflow.com/questions/70560247/bypassing-eu-consent-request
+    
+    tmp_res = [resp.url for resp in response.history if not any(x in resp.url for x in EXCL_REDIR_ARRAY)][-1]
+    return '' if not isinstance(tmp_res, str) else tmp_res
 
 
 def base_link_to_gold_link(base_link):
