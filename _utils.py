@@ -247,7 +247,8 @@ def link_expand(link):
     """
     response = requests.head(link, allow_redirects=True)                                 # https://stackoverflow.com/questions/70560247/bypassing-eu-consent-request
     
-    tmp_res = [resp.url for resp in response.history if not any(x in resp.url for x in EXCL_REDIR_ARRAY)][-1]
+    
+    tmp_res = [resp.url for resp in response.history if not any(x in resp.url for x in EXCL_REDIR_ARRAY)][-1] if response.history else response.url
     return '' if not isinstance(tmp_res, str) else tmp_res
 
 
@@ -264,10 +265,10 @@ def base_link_to_gold_link(base_link):
     gold_link       = base_link
 
     try:
-        try_expand      = urlexpander.expand(base_link , use_head=False)                # gold_link = url_normalize(urlexpander.expand(base_link)) 
-        if      (   "__CLIENT_ERROR__".lower()          not in try_expand.lower() ) \
-            and (   "__connectionpool_error__".lower()  not in try_expand.lower() ):    # __CLIENT_ERROR__: https://github.com/SMAPPNYU/urlExpander/issues http://t.me\__connectionpool_error__/
-            gold_link   = try_expand                          
+        gold_link =  link_expand(gold_link)                                             # try_expand      = urlexpander.expand(base_link , use_head=False)                # gold_link = url_normalize(urlexpander.expand(base_link)) 
+                                                                                        # if      (   "__CLIENT_ERROR__".lower()          not in try_expand.lower() ) \
+                                                                                        #     and (   "__connectionpool_error__".lower()  not in try_expand.lower() ):    # __CLIENT_ERROR__: https://github.com/SMAPPNYU/urlExpander/issues http://t.me\__connectionpool_error__/
+                                                                                        #     gold_link   = try_expand                          
 
         o               = urllib.parse.urlsplit(gold_link)
         o_query         = dict(urllib.parse.parse_qsl(o.query))                         # https://gist.github.com/rokcarl/20b5bf8dd9b1998880b7
@@ -281,6 +282,7 @@ def base_link_to_gold_link(base_link):
             params = STRICT_PARAMS_DICT[o_hostname]
             gold_link = w3lib.url.url_query_cleaner(gold_link,params)
     except Exception as e:
+        print(gold_link ," ",base_link)
         print(e)
         gold_link = ''
 
