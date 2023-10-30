@@ -207,8 +207,6 @@ DUP_EMPTY_TBL_SQL   =   """
 ######################################################################
 """
 import w3lib.url
-import urlexpander
-from url_normalize import url_normalize
 import urllib.parse
 import requests
 
@@ -228,6 +226,7 @@ STRICT_PARAMS_DICT  = {
 
 EXCL_REDIR_ARRAY    = [
       "https://consent."
+    , "https://www.linkedin.com/signup/cold-join"
     # , "www."
 ]
 
@@ -251,6 +250,15 @@ def link_expand(link):
     tmp_res = [resp.url for resp in response.history if not any(x in resp.url for x in EXCL_REDIR_ARRAY)][-1] if response.history else response.url
     return '' if not isinstance(tmp_res, str) else tmp_res
 
+    """
+    TODO: 
+    Somehow I need to recognise such transformation... Manual variant works but every time need to fix
+    - "https://sql-optimizer.streamlit.app/"
+    V		
+    - "https://sql-optimizer.streamlit.app/-/login?payload=MTY5ODY5OTM2NXw5YV9KTVl2SXAtTVNya2NrS3U4RlJ3UG0wQlAwQjJ3STdvcGpSZzk2Z2ZVOEc5Z1ROVHF5NWhqaGw1Q2JoZDVnUldFX1VCVTI3TlJuS0ZRZFJyNUthLXFhMVJQMzhlc2sxSThZNXZlendiN3BhR3YzODM5T0RnNXVuYjQ3eXlFN2lZeHI1TXFXRlFRS1k1VjRWejJoa2s2YnhScE9BdU1LUWpZUW9vaDBzOHhucmtvbXB4QUozY1dzeG1EU1hlMWVndkVGcm9uYjhtcnUyTjhJVWRuV0xkb0l3cWxNN1k1VVFkaTdHa2pqTG1LeHVpbUNWYm1ZMDdaZWxlTi1MZW1PellJaGp2dUZNdHBRYzh4ZEdfdHRPei1YenZ5SXE5MmExYm1XVllxZkFCZUVaSWtKV2VCOTQ3b0dwWUQ1bzl1TVR0b1N4N2F1eE5Xci1zUmE0US1XOFRDQ0NXYnNCLXNhV1NlZ1cxX0labGVpVWo0VzlfcHRJVWpIRGNGWW5UeU10Y3hhTXRRYjUyYy1CUmVrMl9kZ0VJZTViVWcwYmlFNzdrZ3kwaTdWNWdOY3JSd3FNWHFuWExKMjI3NG5qR3BpUjFCT1doSWlIdlpEMjNHVlFyd3pzR1V6UTVWbDg3TWNXcDJEYmY1a05lTDRLQ1ZUMnVVMXhmWG9VRjdoQTJFNzJpM0JyaWx4S2N6MVdZd3hoTDdwM1hnQnzhNT077_OAts4Nrn2u0_nBkbm63EQYItY5eel4wryPYg%3D%3D"
+    
+    """
+
 
 def base_link_to_gold_link(base_link):
     """
@@ -265,6 +273,7 @@ def base_link_to_gold_link(base_link):
     gold_link       = base_link
 
     try:
+        gold_link = gold_link.replace("&amp;", "&")
         gold_link =  link_expand(gold_link)                                             # try_expand      = urlexpander.expand(base_link , use_head=False)                # gold_link = url_normalize(urlexpander.expand(base_link)) 
                                                                                         # if      (   "__CLIENT_ERROR__".lower()          not in try_expand.lower() ) \
                                                                                         #     and (   "__connectionpool_error__".lower()  not in try_expand.lower() ):    # __CLIENT_ERROR__: https://github.com/SMAPPNYU/urlExpander/issues http://t.me\__connectionpool_error__/
