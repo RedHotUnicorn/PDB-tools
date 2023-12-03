@@ -4,6 +4,10 @@ import pandas as pd
 YT_VIDEO_ID     =  'Stu8h5cVzoQ' 
 YT_VIDEO_ID     =  'YZhaZCLresQ'
 YT_VIDEO_ID     =  'VOff0Uhr8X0'
+YT_VIDEO_ID     =  'Uc75PYSYPpI'
+YT_VIDEO_ID     =  'nJ660t5ku9A'
+
+
 
 YT_LINK         = f'https://www.youtube.com/watch?v={YT_VIDEO_ID}'
 
