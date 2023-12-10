@@ -22,33 +22,35 @@ pd.set_option('max_colwidth', None)
 
 nlp = spacy.load("ru_core_news_lg")
 
-text = """Мелкое.
-Механизм определения свой чужой во многом схож с механизмом работы Cloak, и позволяет достоверно определить подлинность клиента, но вместе с тем не вызываетподозренияуцензоровиустойчивкreplayатакамсосторонысистеманализатрафикаэтовыглядиткакподключениекнастоящемупопулярномусайту,серверотдаетнастоящийTLSсертификатэтогосайта,ивообще все включая TLS fingerprint сервера выглядит до предела аутентично и не вызывает подозрений. 
-Еще XTLS Reality может оказаться вариантом для обхода суровых корпоративных прокси с Man in the Middle, которые перешифровывают весь трафик из сети своим сертификатом нередко подобные прокси имеют список исключений для ресурсов с HSTS и certificate pinning, либо для экономии ресурсов, и подобрав правильный домен можно пролезть во внешнюю сеть без расшифровки трафика. 
-"""
+# text = """Мелкое.
+# Механизм определения свой чужой во многом схож с механизмом работы Cloak, и позволяет достоверно определить подлинность клиента, но вместе с тем не вызываетподозренияуцензоровиустойчивкreplayатакамсосторонысистеманализатрафикаэтовыглядиткакподключениекнастоящемупопулярномусайту,серверотдаетнастоящийTLSсертификатэтогосайта,ивообще все включая TLS fingerprint сервера выглядит до предела аутентично и не вызывает подозрений. 
+# Еще XTLS Reality может оказаться вариантом для обхода суровых корпоративных прокси с Man in the Middle, которые перешифровывают весь трафик из сети своим сертификатом нередко подобные прокси имеют список исключений для ресурсов с HSTS и certificate pinning, либо для экономии ресурсов, и подобрав правильный домен можно пролезть во внешнюю сеть без расшифровки трафика. 
+# """
 
-data = {
+# data = {
 
-"id": [1] ,
-"markdown" : [text]
-}
+# "id": [1] ,
+# "markdown" : [text]
+# }
 
 
 
-# data = pd.read_sql_query (f"""
-#                               SELECT
-#                                           id
-#                                         , markdown
-#                               FROM     content
-#                               WHERE    m_length   > 10000 
-#                                    and markdown not like '%00:00%' 
-#                                    and id             in (select id from NTN_V_url where  
-#                                                                 -- url like '%t.me%' or 
-#                                                                 url like '%nesslabs.com%' or
-#                                                                 url like '%habr.com%'
-#                                                             )       
-#                               LIMIT 100
-#                               """, sqlite3.connect(r'C:\MyFiles\Code\PDB-tools\PDB-tools\results\articles.db') )
+data = pd.read_sql_query (f"""
+                              SELECT
+                                          c.id
+                                        , markdown
+                                        , url
+                              FROM      content c
+                              LEFT JOIN NTN_V_url n on n.id = c.id 
+                              WHERE    m_length   > 10000 
+                                   and markdown not like '%00:00%' 
+                                   and c.id             in (select id from NTN_V_url where  
+                                                                -- url like '%t.me%' or 
+                                                                -- url like '%nesslabs.com%' or
+                                                                url like '%habr.com%'
+                                                            )       
+                              LIMIT 100
+                              """, sqlite3.connect(r'C:\MyFiles\Code\PDB-tools\PDB-tools\results\articles.db') )
 
 
 
@@ -86,7 +88,7 @@ def clean_text(rubbish_text):
 
 
 # Explode markdown to sentences
-def expl_sent(text,num_of_sent = 3,max_sent_len = 150):
+def expl_sent(text,num_of_sent = 3,max_sent_len = 100):
     # TODO guess what the lang of text
     try:
         with nlp.select_pipes(enable=['tok2vec', "parser", "senter"]):
@@ -102,8 +104,9 @@ def expl_sent(text,num_of_sent = 3,max_sent_len = 150):
         print(e)
         print(len(text) + ' ' + text[0:100])
 
-    print(sent)
-    print('-'*200)
+    old = sent
+    # print(sent)
+    # print('-'*200)
 
     for index, item in enumerate(sent):
         if len(item) > max_sent_len:
@@ -111,6 +114,7 @@ def expl_sent(text,num_of_sent = 3,max_sent_len = 150):
             right = 0
             left = 0
             new = []
+            count = 0
             while right != len(item):
                 left = right
 
@@ -118,20 +122,28 @@ def expl_sent(text,num_of_sent = 3,max_sent_len = 150):
                     length = item[left:left+max_sent_len].rfind(' ')
                     if length == -1:
                         length = max_sent_len
-                        # what if two spaces?
+                        # TODO what if two spaces?
                     right = left + length +1 # +1 bcs we want to skip last founded space in the next iteration
                 else:
                     right = len(item)
 
-                print(right)
-                print(item[left:right])
+                # print(right)
+                # print(item[left:right])
                 new.append(item[left:right])
-            print(new)
+                count+=1
+                if count > 30 : 
+                    print('ALERT')
+                    print(item[left:right])
+
+            # print(new)
             sent.pop(index)
             sent[index:index] = new
 
-    print('-'*200)
-    print(sent)
+    # print('-'*200)
+    # print(sent)
+
+    # TODO implement this check 
+    # print(''.join(old) == ''.join(sent))
 
                     
 
@@ -149,13 +161,13 @@ def expl_sent(text,num_of_sent = 3,max_sent_len = 150):
 
 
 
-df_docs             = pd.DataFrame(data, columns = ['id', 'markdown'])
+df_docs             = pd.DataFrame(data, columns = ['id', 'markdown','url'])
 df_docs['sent']     = df_docs['markdown'].apply(clean_text).apply(expl_sent)
 df_docs             = df_docs.explode('sent',ignore_index=True)
 
-print(df_docs['sent'])
+# print(df_docs['sent'])
 
-"""
+
 
 df_docs.to_excel(r'out/df_docs.xlsx')
 
@@ -164,11 +176,14 @@ df_docs.to_excel(r'out/df_docs.xlsx')
 
 
 def lemmatize(text: str):
-     doc = nlp(text.lower())
-     lemmas = []
-     for token in doc:
-          lemmas.append(token.lemma_)
-     return lemmas
+    # TODO mayb i should exclude some submodules of nlp spacy?
+    nlp.max_length = len(text) + 1000
+    doc = nlp(text.lower())
+    
+    lemmas = []
+    for token in doc:
+        lemmas.append(token.lemma_)
+    return lemmas
 
 
 ctfidf_model        = ClassTfidfTransformer(reduce_frequent_words=True)
@@ -220,4 +235,10 @@ res_stat            = res_stat.query('count_unique_by_id < 3 or perc_count > 0.1
 
 res_stat.to_excel(r'out/BERTopic.xlsx')
 
-"""
+
+# SOLVED 
+# [E088] Text of length 1894734 exceeds maximum of 1000000. 
+# The parser and NER models require roughly 1GB of temporary memory per 100,000 characters in the input. 
+# This means long texts may cause memory allocation errors. 
+# If you're not using the parser or NER, it's probably safe to increase the `nlp.max_length` limit. 
+# The limit is in number of characters, so you can check whether your inputs are too long by checking `len(text)`.
