@@ -22,57 +22,10 @@ pd.set_option('max_colwidth', None)
 
 nlp = spacy.load("ru_core_news_lg")
 
-
-
-
-
-text = """*Ещё* одна интересная классификация визуализаций попалась.
-# Автор - Koen van den Eeckhout.
-Идея классификации интересная, но все же, не идеально. Наверное, облака или диаграмма венна была бы тут уместнее.
-Например, что делать с печатными картами? Коварные карты бывают совершенно всех трех видов
-**😁**
-Но для подумать пригодится, ~~чтобы~~ для себя на старте ответить на вопросы:
-- [test](https://docs.python.org/3/tutorial/datastructures.html)
-- https://docs.python.org/3/tutorial/datastructures.html
-- А какой же продукт мы хотим?
-- Как быстро его должен воспринимать читатель?
-- Как и кто будет с ним взаимодействовать?
-Источник тут (впн):
-> quotes
-__This is bold text__
+text = """Мелкое.
+Механизм определения свой чужой во многом схож с механизмом работы Cloak, и позволяет достоверно определить подлинность клиента, но вместе с тем не вызываетподозренияуцензоровиустойчивкreplayатакамсосторонысистеманализатрафикаэтовыглядиткакподключениекнастоящемупопулярномусайту,серверотдаетнастоящийTLSсертификатэтогосайта,ивообще все включая TLS fingerprint сервера выглядит до предела аутентично и не вызывает подозрений. 
+Еще XTLS Reality может оказаться вариантом для обхода суровых корпоративных прокси с Man in the Middle, которые перешифровывают весь трафик из сети своим сертификатом нередко подобные прокси имеют список исключений для ресурсов с HSTS и certificate pinning, либо для экономии ресурсов, и подобрав правильный домен можно пролезть во внешнюю сеть без расшифровки трафика. 
 """
-
-
-text = """
-Статей о работе с PostgreSQL и её преимуществах достаточно много, но не всегда из них понятно, как следить за состоянием базы и метриками, влияющими на её оптимальную работу. В статье подробно рассмотрим SQL-запросы, которые помогут вам отслеживать эти показатели и просто могут быть полезны как пользователю.
-## Зачем следить за состоянием PostgreSQL?
-Мониторинг базы данных также важен, как и мониторинг ваших приложений. Необходимо отслеживать процессы более детализировано, чем на системном уровне. Для этого можно отслеживать следующие метрики:
-Насколько эффективен кэш базы данных?
-Какой размер таблиц в вашей БД?
-Используются ли ваши индексы?
-И так далее.
-## Мониторинг размера БД и её элементов
-### 1. Размер табличных пространств
-
-```
-SELECT spcname, pg_size_pretty(pg_tablespace_size(spcname))
-FROM pg_tablespace
-WHERE spcname<>'pg_global';
-```
-После запуска запроса вы получите информацию о размере всех tablespace созданных в вашей БД. Функция **pg_tablespace_size** предоставляет информацию о размере tablespace в байтах, поэтому для приведения к читаемому виду мы также используем функцию **pg_size_pretty**. Пространство pg_global исключаем, так как оно используется для общих системных каталогов.
-### 2. Размер баз данных
-
-```
-SELECT pg_database.datname,
-pg_size_pretty(pg_database_size(pg_database.datname)) AS size
-FROM pg_database
-ORDER BY pg_database_size(pg_database.datname) DESC;
-```
-После запуска запроса вы получите информацию о размере всех баз данных, созданных в рамках вашего экземпляра PostgreSQL.
-
-"""
-
-
 
 data = {
 
@@ -82,22 +35,27 @@ data = {
 
 
 
-data = pd.read_sql_query (f"""
-                              SELECT
-                                          id
-                                        , markdown
-                              FROM     content
-                              WHERE    m_length   > 100 
-                                   and markdown not like '%00:00%' 
-                                   and id             in (select id from NTN_V_url where  url like '%t.me%')       
-                              LIMIT 10  
-                              """, sqlite3.connect(r'') )
+# data = pd.read_sql_query (f"""
+#                               SELECT
+#                                           id
+#                                         , markdown
+#                               FROM     content
+#                               WHERE    m_length   > 10000 
+#                                    and markdown not like '%00:00%' 
+#                                    and id             in (select id from NTN_V_url where  
+#                                                                 -- url like '%t.me%' or 
+#                                                                 url like '%nesslabs.com%' or
+#                                                                 url like '%habr.com%'
+#                                                             )       
+#                               LIMIT 100
+#                               """, sqlite3.connect(r'C:\MyFiles\Code\PDB-tools\PDB-tools\results\articles.db') )
 
 
 
 
 def clean_text(rubbish_text):
-    text_wo_emoji   = emoji.replace_emoji(rubbish_text, '')
+    text_wo_yaml    = re.sub(r"\A^---(.|\n)*?---", '', rubbish_text)
+    text_wo_emoji   = emoji.replace_emoji(text_wo_yaml, '')
     text_wo_code    = re.sub(r"```[^\S\r\n]*[a-z]*\n.*?\n```", ' INNER_CODE_BLOCK.', text_wo_emoji, 0, re.DOTALL)
     text_wo_md      = convert_to_plain_text(text_wo_code)                                                                # pd.DataFrame(data, columns = ['id', 'markdown']).replace(r"\[(.+)\]\(.+\)", '', regex=True).replace(r'http\S+', '', regex=True)  
     text_wo_links   = re.sub('http\S+','' ,text_wo_md)
@@ -128,10 +86,54 @@ def clean_text(rubbish_text):
 
 
 # Explode markdown to sentences
-def expl_sent(text,num_of_sent = 3):
-    with nlp.select_pipes(enable=['tok2vec', "parser", "senter"]):
-          doc = nlp(text)
-    sent = [str(sentence) for sentence in doc.sents  ]  
+def expl_sent(text,num_of_sent = 3,max_sent_len = 150):
+    # TODO guess what the lang of text
+    try:
+        with nlp.select_pipes(enable=['tok2vec', "parser", "senter"]):
+            doc = nlp(text)
+        sent = [str(sentence) for sentence in doc.sents  ]  
+
+
+        # TODO if sentence is big try to reduce it by leaving only valuable words
+
+        
+
+    except Exception as e:
+        print(e)
+        print(len(text) + ' ' + text[0:100])
+
+    print(sent)
+    print('-'*200)
+
+    for index, item in enumerate(sent):
+        if len(item) > max_sent_len:
+            
+            right = 0
+            left = 0
+            new = []
+            while right != len(item):
+                left = right
+
+                if right+max_sent_len <= len(item):
+                    length = item[left:left+max_sent_len].rfind(' ')
+                    if length == -1:
+                        length = max_sent_len
+                        # what if two spaces?
+                    right = left + length +1 # +1 bcs we want to skip last founded space in the next iteration
+                else:
+                    right = len(item)
+
+                print(right)
+                print(item[left:right])
+                new.append(item[left:right])
+            print(new)
+            sent.pop(index)
+            sent[index:index] = new
+
+    print('-'*200)
+    print(sent)
+
+                    
 
     
     # sent3= list(zip( sent[0:],sent[1:],sent[2:] ))
@@ -151,8 +153,11 @@ df_docs             = pd.DataFrame(data, columns = ['id', 'markdown'])
 df_docs['sent']     = df_docs['markdown'].apply(clean_text).apply(expl_sent)
 df_docs             = df_docs.explode('sent',ignore_index=True)
 
-# print(df_docs['sent'])
+print(df_docs['sent'])
 
+"""
+
+df_docs.to_excel(r'out/df_docs.xlsx')
 
 
 
@@ -167,19 +172,23 @@ def lemmatize(text: str):
 
 
 ctfidf_model        = ClassTfidfTransformer(reduce_frequent_words=True)
-my_stopwords        = stopwords.words("russian")
+my_stopwords        = stopwords.words("russian") + stopwords.words("english")
 vectorizer_model    = CountVectorizer(stop_words=my_stopwords,tokenizer=lemmatize)
 
 topic_model         = BERTopic(  language           = "multilingual"
                                 ,ctfidf_model       = ctfidf_model
                                 ,vectorizer_model   = vectorizer_model
                                 )
-topics, probs       = topic_model.fit_transform(df_docs['sent'])
+try:
+    topics, probs       = topic_model.fit_transform(df_docs['sent'])
+except Exception as e:
+    print(e)
+
 # print(topic_model.get_topic_info(df_docs['sent']))
 
 res                 = topic_model.get_document_info(df_docs['sent'])
 df_topics           = pd.DataFrame(topic_model.get_topics().items(), columns=['Topic', 'Words']) 
-print(df_topics)
+# print(df_topics)
 
 # print(res)
 # res.to_excel(r'out/BERTopic.xlsx')
@@ -200,14 +209,15 @@ count_unique_by_id  = gr_id.agg({'Topic': 'nunique'}).rename(columns={'Topic': '
 res_stat            = (  count_by_id 
                         .join(count_by_id_topic)
                         .join(count_unique_by_id)
-                        # .join(df_topics.set_index('Topic') ,on = 'Topic',)
+                        .join(df_topics.set_index('Topic') ,on = 'Topic',)
                       )   
 res_stat['perc_count'] = res_stat['count_by_id_topic'] / res_stat['count_by_id']
-print(res_stat)
+# print(res_stat)
 
 
-res_stat            = res_stat.query('count_unique_by_id < 3 or perc_count > 0.1')
-print(res_stat)
+res_stat            = res_stat.query('count_unique_by_id < 3 or perc_count > 0.15')
+# print(res_stat)
 
+res_stat.to_excel(r'out/BERTopic.xlsx')
 
-
+"""
