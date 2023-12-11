@@ -4,16 +4,17 @@ logging.basicConfig()
 logger = logging.getLogger('PDB_tools_logger')
 logger.setLevel(logging.DEBUG)
 
-import os
-import configparser
-import sqlite3
-import subprocess
-import markdown
-from urlextract import URLExtract
-import re
-import pandas as pd
-from nltk.corpus import stopwords
-import time
+import  os
+import  configparser
+import  sqlite3
+import  subprocess
+import  markdown
+from    urlextract import URLExtract
+import  re
+import  pandas as pd
+from    nltk.corpus import stopwords
+import  time
+from difflib import SequenceMatcher
 
 
 
@@ -297,13 +298,47 @@ def base_link_to_gold_link(base_link):
 
     return gold_link
 
-# import requests
-# response = requests.head('https://m.youtube.com/playlist?list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL', allow_redirects=True) # https://stackoverflow.com/questions/70560247/bypassing-eu-consent-request
-# for resp in response.history :
-#     if "https://consent." not in resp.url:
-#         print(resp.status_code, resp.url)
-#         # 302 https://m.youtube.com/playlist?list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL
-#         # 302 https://www.youtube.com/playlist?app=desktop&list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL
-# print(response.url)
-# print(response.is_redirect)
+import requests
+response = requests.head('https://m.youtube.com/playlist?list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL', allow_redirects=True) # https://stackoverflow.com/questions/70560247/bypassing-eu-consent-request
+response = requests.head('''https://www.linkedin.com/posts/aurelienvautier_businessintelligence-dataanalytics-dashboard-activity-7097459717383311360-db1X''', allow_redirects=True) # https://stackoverflow.com/questions/70560247/bypassing-eu-consent-request
+# response = requests.head('''https://sql-optimizer.streamlit.app/''', allow_redirects=True) # https://stackoverflow.com/questions/70560247/bypassing-eu-consent-request
+# response = requests.head('''https://bit.ly/3dV6cFr''', allow_redirects=True) # https://stackoverflow.com/questions/70560247/bypassing-eu-consent-request
 
+
+for resp in response.history :
+    # if "https://consent." not in resp.url:
+        # print(resp.status_code, resp.url)
+    print(resp.status_code, resp.url)
+    print('-'*200)
+        # 302 https://m.youtube.com/playlist?list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL
+        # 302 https://www.youtube.com/playlist?app=desktop&list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL
+print(response.url)
+print(response.is_redirect)
+
+text1 = 'https://m.youtube.com/playlist?list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL'
+text2 = 'https://www.youtube.com/playlist?app=desktop&list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL'
+print(SequenceMatcher(None, text1, text2).ratio())
+
+text1 = 'https://www.youtube.com/playlist?app=desktop&list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL'
+text2 = 'https://consent.youtube.com/ml?continue=https://www.youtube.com/playlist?app%3Ddesktop%26list%3DPL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL%26cbrd%3D1&gl=DE&hl=de&cm=2&pc=yt&src=1'
+print(SequenceMatcher(None, text1, text2).ratio())
+
+text1 = 'https://sql-optimizer.streamlit.app/'
+text2 = 'https://share.streamlit.io/-/auth/app?redirect_uri=https%3A%2F%2Fsql-optimizer.streamlit.app%2F'
+print(SequenceMatcher(None, text1, text2).ratio())
+
+text1 = 'https://share.streamlit.io/-/auth/app?redirect_uri=https%3A%2F%2Fsql-optimizer.streamlit.app%2F'
+text2 = 'https://sql-optimizer.streamlit.app/-/login?payload=MTcwMjMyNTkxM3xkYzMycUFQUC16V3p6ZmZENEJWTnp6VVR5S1RrTTliZ0ZVS2tvUEhzUVRUMG1TSlhqWnN6OU1qdmFENDBpWUJ6ZWxHTURjUFFwVnJQaUZMcFlqRnNmSDhiZmpWd09aYks5MjBPVks3cGtIbjR2U21TMWtzTXI5dDZ6NS1saElEcm9zY0pkX3hBN2NoVGJZMUdFd1dRX1pmX2VwbE1qQlJaOTA1enJ0R1hMQ3VHUE9JOTUwWi1veTFLNGdYeHlSWF9yazVpLTBBTk9BYTZxTW9GU0lNMjVqYkRPT0FtZk1HNzlHYUQ1czZ0N3ZKT1pUaFdVaXl0MDRpcU84ajh6QzlPOG0wVWY4T1QwSklTVmg4WE04M0N3bFJEdXhBMmdocnYxclhlb2xCRUhFc2x3bVNJZ2h2ZGRfb3VIN0V2WU1zZjUyUU91N3o4dWplbVEwakNXYi00VlpKdFdHLWczQnBhUjBXcUxlSmlQdjh5Q0taQ3d3ZlRNeHRNZzFkS0lWNFpsWUZQTXFkVGF4eFBqRFl3VDBJQUVZbTc1S3F6QXN0SS1TRm02c2t0RzNtNE9FeE1vMVVPVXJudmdrZDZzVnNueXd5dXRGemJsYWN5SFNXN2xub0hkdnRvd0hZbGtzRjk2SzBVOXhXRUNpaGcyRWMzZzdOc1VlRk9LT044SDdSSG9JdlpsMFFGeUUzeTlpRFVXTFF2U0t2OXx6xAddRJr5D34xPszvGcHOu7Dy_64N-h9R04W_vff92Q%3D%3D'
+print(SequenceMatcher(None, text1, text2).ratio())
+
+
+text1 = 'https://www.linkedin.com/posts/aurelienvautier_businessintelligence-dataanalytics-dashboard-activity-7097459717383311360-db1X'
+text2 = 'https://www.linkedin.com/signup/cold-join?session_redirect=https%3A%2F%2Fwww.linkedin.com%2Ffeed%2Fupdate%2Furn%3Ali%3Aactivity%3A7097459717383311360'
+print(SequenceMatcher(None, text1, text2).ratio())
+
+
+
+text1 = 'test test test test remove'
+text2 = 'append test test test test append '
+print(SequenceMatcher(None, text1, text2).ratio())
+print(SequenceMatcher(None, text2, text1).ratio())

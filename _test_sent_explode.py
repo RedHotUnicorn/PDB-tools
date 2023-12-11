@@ -48,8 +48,9 @@ data = pd.read_sql_query (f"""
                                                                 -- url like '%t.me%' or 
                                                                 -- url like '%nesslabs.com%' or
                                                                 url like '%habr.com%'
-                                                            )       
-                              LIMIT 100
+                                                            )    
+                                    -- and    c.id = 36947
+                              LIMIT 200
                               """, sqlite3.connect(r'C:\MyFiles\Code\PDB-tools\PDB-tools\results\articles.db') )
 
 
@@ -177,8 +178,10 @@ df_docs.to_excel(r'out/df_docs.xlsx')
 
 def lemmatize(text: str):
     # TODO mayb i should exclude some submodules of nlp spacy?
+
     nlp.max_length = len(text) + 1000
-    doc = nlp(text.lower())
+    with nlp.select_pipes(enable=['lemmatizer']):
+        doc = nlp(text.lower())
     
     lemmas = []
     for token in doc:
@@ -236,9 +239,4 @@ res_stat            = res_stat.query('count_unique_by_id < 3 or perc_count > 0.1
 res_stat.to_excel(r'out/BERTopic.xlsx')
 
 
-# SOLVED 
-# [E088] Text of length 1894734 exceeds maximum of 1000000. 
-# The parser and NER models require roughly 1GB of temporary memory per 100,000 characters in the input. 
-# This means long texts may cause memory allocation errors. 
-# If you're not using the parser or NER, it's probably safe to increase the `nlp.max_length` limit. 
-# The limit is in number of characters, so you can check whether your inputs are too long by checking `len(text)`.
+
