@@ -38,11 +38,11 @@ sent=trafilatura.extract(
             .replace("<li>", "<li>\n")
 		)
 	#, output_format='xml'
-# ,include_images=True
- ,include_formatting=True
-, include_links=True
-# ,favor_precision=True
-,include_comments=True
+      # ,include_images=True
+      ,include_formatting=True
+      , include_links=True
+      # ,favor_precision=True
+      ,include_comments=True
 ).replace('```', "\n```\n")
 
 
@@ -53,18 +53,6 @@ f.close()
 
 
 
-sent=trafilatura.extract(downloaded
-	#, output_format='xml'
-# ,include_images=True
- ,include_formatting=True
-, include_links=True
-# ,favor_precision=True
-,include_comments=True
-)
-
-f = open("out/_test_trafiltura_1.6.3.md", "w",encoding='utf-8')
-f.write(sent)
-f.close()
 
 
 
