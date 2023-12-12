@@ -21,6 +21,7 @@ from    bs4 import BeautifulSoup
 from    pathlib import Path
 from    datetime import datetime
 import  hashlib
+import  uuid
 import  frontmatter
 
 
@@ -447,7 +448,7 @@ def generate_hash(file_or_str):
         s = file_or_str
     elif hasattr(file_or_str, "read"): 
         s = file_or_str.read()
-    return hashlib.md5(s.encode()).hexdigest()
+    return uuid.uuid5(uuid.NAMESPACE_DNS, s).hex
 
 def get_yaml_meta_from_file(fd):
     ret     = None
@@ -482,7 +483,7 @@ def get_vault_files_as_df(folder_path=DWN_VAULT_PATH):
         size.append(file.stat().st_size)
         modified.append(datetime.fromtimestamp(file.stat().st_mtime))
         with open(file, encoding="utf-8") as f:        
-            hashes.append(hashlib.md5(f.read().encode()).hexdigest())
+            hashes.append(generate_hash(f))
         yaml_meta.append(get_yaml_meta_from_file(os.path.join(file.parents[0],file.parts[-1]) ))
 
     columns         = ['f_path', 'f_Name'  , 'f_size'   ,'f_lm', 'f_ash', 'f_yaml'    ]

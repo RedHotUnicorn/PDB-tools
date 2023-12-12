@@ -14,12 +14,16 @@ df[['status_code','ct']]      = df                .apply(lambda x: u.first_try_u
 
 df[['title','md']]            = df                .apply(lambda x: u.download_title_and_content(x.gold_link), axis=1 , result_type='expand' ) 
 df['md_hash']                 = df                .apply(lambda x: u.generate_hash(x.md)                    , axis=1 , result_type='expand' ) 
+df['gold_link_hash']          = df                .apply(lambda x: u.generate_hash(x.gold_link)             , axis=1 , result_type='expand' ) 
 df['done']                    = df                .apply(lambda x: u.save_to_file(u.get_valid_filename(x.title)+'.md'
                                                                                   ,x.md
-                                                                                  ,dict( aliases      = [] + [x.gold_link] + [x.base_link]
-                                                                                        ,src          = x.src_link
-                                                                                        ,md_hash      = x.md_hash 
-                                                                                        ,test = 'test' )
+                                                                                  ,dict( aliases            = [] + [x.gold_link] + [x.base_link]
+                                                                                        ,src                = x.src_link
+                                                                                        ,gold_link          = x.gold_link 
+                                                                                        ,gold_link_hash     = x.gold_link_hash 
+                                                                                        ,test               = 'test' 
+                                                                                        ,md_hash            = x.md_hash
+                                                                                        )
                                                                                     ) 
                                                             , axis=1 )
 print(df['title'])
