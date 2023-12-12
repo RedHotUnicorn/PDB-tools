@@ -16,6 +16,12 @@ from    nltk.corpus import stopwords
 import  time
 from difflib import SequenceMatcher
 
+import  trafilatura
+from    bs4 import BeautifulSoup
+from    pathlib import Path
+from    datetime import datetime
+import  hashlib
+import  frontmatter
 
 
 """
@@ -40,6 +46,7 @@ AUTH_NOTION     = config['path']['AUTH_NOTION']
 
 # VAULT_PATH      = r"C:\MyFiles\PKM\PDB"
 VAULT_PATH      = config['path']['VAULT_PATH']
+DWN_VAULT_PATH  = config['path']['DWN_VAULT_PATH']
 VAULT_CSV_PATH  = VAULT_PATH + os.sep + "CSV" + os.sep 
 
 DB_FILE_NAME    = config['store']['DB_FILE_NAME']
@@ -225,6 +232,10 @@ STRICT_PARAMS_DICT  = {
       "www.youtube.com" :['v', 'list','t']
 }
 
+ADD_PARAMS_DICT  = {
+      "t.me" : {"embed":1 , "mode": "tme"}
+}
+
 EXCL_REDIR_ARRAY    = [
       "https://consent."
     , "https://www.linkedin.com/signup/cold-join"
@@ -287,10 +298,14 @@ def base_link_to_gold_link(base_link):
 
         gold_link = o._replace(query=urllib.parse.urlencode(o_query)).geturl()
 
-        o_hostname      = o.hostname
+        o_hostname          = o.hostname
         if o_hostname in STRICT_PARAMS_DICT:
-            params = STRICT_PARAMS_DICT[o_hostname]
-            gold_link = w3lib.url.url_query_cleaner(gold_link,params)
+            params          = STRICT_PARAMS_DICT[o_hostname]
+            gold_link       = w3lib.url.url_query_cleaner(gold_link,params)
+        if o_hostname in ADD_PARAMS_DICT:
+            params_to_add   = ADD_PARAMS_DICT[o_hostname]
+            gold_link       = w3lib.url.add_or_replace_parameters(gold_link,params_to_add)
+        
     except Exception as e:
         print(gold_link ," ",base_link)
         print(e)
@@ -298,43 +313,43 @@ def base_link_to_gold_link(base_link):
 
     return gold_link
 
-import requests
-response = requests.head('https://m.youtube.com/playlist?list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL', allow_redirects=True) # https://stackoverflow.com/questions/70560247/bypassing-eu-consent-request
-response = requests.head('''https://www.linkedin.com/posts/aurelienvautier_businessintelligence-dataanalytics-dashboard-activity-7097459717383311360-db1X''', allow_redirects=True) # https://stackoverflow.com/questions/70560247/bypassing-eu-consent-request
-# response = requests.head('''https://sql-optimizer.streamlit.app/''', allow_redirects=True) # https://stackoverflow.com/questions/70560247/bypassing-eu-consent-request
-# response = requests.head('''https://bit.ly/3dV6cFr''', allow_redirects=True) # https://stackoverflow.com/questions/70560247/bypassing-eu-consent-request
+# import requests
+# response = requests.head('https://m.youtube.com/playlist?list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL', allow_redirects=True) # https://stackoverflow.com/questions/70560247/bypassing-eu-consent-request
+# response = requests.head('''https://www.linkedin.com/posts/aurelienvautier_businessintelligence-dataanalytics-dashboard-activity-7097459717383311360-db1X''', allow_redirects=True) # https://stackoverflow.com/questions/70560247/bypassing-eu-consent-request
+# # response = requests.head('''https://sql-optimizer.streamlit.app/''', allow_redirects=True) # https://stackoverflow.com/questions/70560247/bypassing-eu-consent-request
+# # response = requests.head('''https://bit.ly/3dV6cFr''', allow_redirects=True) # https://stackoverflow.com/questions/70560247/bypassing-eu-consent-request
 
 
-for resp in response.history :
-    # if "https://consent." not in resp.url:
-        # print(resp.status_code, resp.url)
-    print(resp.status_code, resp.url)
-    print('-'*200)
-        # 302 https://m.youtube.com/playlist?list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL
-        # 302 https://www.youtube.com/playlist?app=desktop&list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL
-print(response.url)
-print(response.is_redirect)
+# for resp in response.history :
+#     # if "https://consent." not in resp.url:
+#         # print(resp.status_code, resp.url)
+#     print(resp.status_code, resp.url)
+#     print('-'*200)
+#         # 302 https://m.youtube.com/playlist?list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL
+#         # 302 https://www.youtube.com/playlist?app=desktop&list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL
+# print(response.url)
+# print(response.is_redirect)
 
-text1 = 'https://m.youtube.com/playlist?list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL'
-text2 = 'https://www.youtube.com/playlist?app=desktop&list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL'
-print(SequenceMatcher(None, text1, text2).ratio())
+# text1 = 'https://m.youtube.com/playlist?list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL'
+# text2 = 'https://www.youtube.com/playlist?app=desktop&list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL'
+# print(SequenceMatcher(None, text1, text2).ratio())
 
-text1 = 'https://www.youtube.com/playlist?app=desktop&list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL'
-text2 = 'https://consent.youtube.com/ml?continue=https://www.youtube.com/playlist?app%3Ddesktop%26list%3DPL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL%26cbrd%3D1&gl=DE&hl=de&cm=2&pc=yt&src=1'
-print(SequenceMatcher(None, text1, text2).ratio())
+# text1 = 'https://www.youtube.com/playlist?app=desktop&list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL'
+# text2 = 'https://consent.youtube.com/ml?continue=https://www.youtube.com/playlist?app%3Ddesktop%26list%3DPL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL%26cbrd%3D1&gl=DE&hl=de&cm=2&pc=yt&src=1'
+# print(SequenceMatcher(None, text1, text2).ratio())
 
-text1 = 'https://sql-optimizer.streamlit.app/'
-text2 = 'https://share.streamlit.io/-/auth/app?redirect_uri=https%3A%2F%2Fsql-optimizer.streamlit.app%2F'
-print(SequenceMatcher(None, text1, text2).ratio())
+# text1 = 'https://sql-optimizer.streamlit.app/'
+# text2 = 'https://share.streamlit.io/-/auth/app?redirect_uri=https%3A%2F%2Fsql-optimizer.streamlit.app%2F'
+# print(SequenceMatcher(None, text1, text2).ratio())
 
-text1 = 'https://share.streamlit.io/-/auth/app?redirect_uri=https%3A%2F%2Fsql-optimizer.streamlit.app%2F'
-text2 = 'https://sql-optimizer.streamlit.app/-/login?payload=MTcwMjMyNTkxM3xkYzMycUFQUC16V3p6ZmZENEJWTnp6VVR5S1RrTTliZ0ZVS2tvUEhzUVRUMG1TSlhqWnN6OU1qdmFENDBpWUJ6ZWxHTURjUFFwVnJQaUZMcFlqRnNmSDhiZmpWd09aYks5MjBPVks3cGtIbjR2U21TMWtzTXI5dDZ6NS1saElEcm9zY0pkX3hBN2NoVGJZMUdFd1dRX1pmX2VwbE1qQlJaOTA1enJ0R1hMQ3VHUE9JOTUwWi1veTFLNGdYeHlSWF9yazVpLTBBTk9BYTZxTW9GU0lNMjVqYkRPT0FtZk1HNzlHYUQ1czZ0N3ZKT1pUaFdVaXl0MDRpcU84ajh6QzlPOG0wVWY4T1QwSklTVmg4WE04M0N3bFJEdXhBMmdocnYxclhlb2xCRUhFc2x3bVNJZ2h2ZGRfb3VIN0V2WU1zZjUyUU91N3o4dWplbVEwakNXYi00VlpKdFdHLWczQnBhUjBXcUxlSmlQdjh5Q0taQ3d3ZlRNeHRNZzFkS0lWNFpsWUZQTXFkVGF4eFBqRFl3VDBJQUVZbTc1S3F6QXN0SS1TRm02c2t0RzNtNE9FeE1vMVVPVXJudmdrZDZzVnNueXd5dXRGemJsYWN5SFNXN2xub0hkdnRvd0hZbGtzRjk2SzBVOXhXRUNpaGcyRWMzZzdOc1VlRk9LT044SDdSSG9JdlpsMFFGeUUzeTlpRFVXTFF2U0t2OXx6xAddRJr5D34xPszvGcHOu7Dy_64N-h9R04W_vff92Q%3D%3D'
-print(SequenceMatcher(None, text1, text2).ratio())
+# text1 = 'https://share.streamlit.io/-/auth/app?redirect_uri=https%3A%2F%2Fsql-optimizer.streamlit.app%2F'
+# text2 = 'https://sql-optimizer.streamlit.app/-/login?payload=MTcwMjMyNTkxM3xkYzMycUFQUC16V3p6ZmZENEJWTnp6VVR5S1RrTTliZ0ZVS2tvUEhzUVRUMG1TSlhqWnN6OU1qdmFENDBpWUJ6ZWxHTURjUFFwVnJQaUZMcFlqRnNmSDhiZmpWd09aYks5MjBPVks3cGtIbjR2U21TMWtzTXI5dDZ6NS1saElEcm9zY0pkX3hBN2NoVGJZMUdFd1dRX1pmX2VwbE1qQlJaOTA1enJ0R1hMQ3VHUE9JOTUwWi1veTFLNGdYeHlSWF9yazVpLTBBTk9BYTZxTW9GU0lNMjVqYkRPT0FtZk1HNzlHYUQ1czZ0N3ZKT1pUaFdVaXl0MDRpcU84ajh6QzlPOG0wVWY4T1QwSklTVmg4WE04M0N3bFJEdXhBMmdocnYxclhlb2xCRUhFc2x3bVNJZ2h2ZGRfb3VIN0V2WU1zZjUyUU91N3o4dWplbVEwakNXYi00VlpKdFdHLWczQnBhUjBXcUxlSmlQdjh5Q0taQ3d3ZlRNeHRNZzFkS0lWNFpsWUZQTXFkVGF4eFBqRFl3VDBJQUVZbTc1S3F6QXN0SS1TRm02c2t0RzNtNE9FeE1vMVVPVXJudmdrZDZzVnNueXd5dXRGemJsYWN5SFNXN2xub0hkdnRvd0hZbGtzRjk2SzBVOXhXRUNpaGcyRWMzZzdOc1VlRk9LT044SDdSSG9JdlpsMFFGeUUzeTlpRFVXTFF2U0t2OXx6xAddRJr5D34xPszvGcHOu7Dy_64N-h9R04W_vff92Q%3D%3D'
+# print(SequenceMatcher(None, text1, text2).ratio())
 
 
-text1 = 'https://www.linkedin.com/posts/aurelienvautier_businessintelligence-dataanalytics-dashboard-activity-7097459717383311360-db1X'
-text2 = 'https://www.linkedin.com/signup/cold-join?session_redirect=https%3A%2F%2Fwww.linkedin.com%2Ffeed%2Fupdate%2Furn%3Ali%3Aactivity%3A7097459717383311360'
-print(SequenceMatcher(None, text1, text2).ratio())
+# text1 = 'https://www.linkedin.com/posts/aurelienvautier_businessintelligence-dataanalytics-dashboard-activity-7097459717383311360-db1X'
+# text2 = 'https://www.linkedin.com/signup/cold-join?session_redirect=https%3A%2F%2Fwww.linkedin.com%2Ffeed%2Fupdate%2Furn%3Ali%3Aactivity%3A7097459717383311360'
+# print(SequenceMatcher(None, text1, text2).ratio())
 
 
 
@@ -342,3 +357,158 @@ text1 = 'test test test test remove'
 text2 = 'append test test test test append '
 print(SequenceMatcher(None, text1, text2).ratio())
 print(SequenceMatcher(None, text2, text1).ratio())
+
+"""
+######################################################################
+                    WORK WITH MD FILES
+######################################################################
+"""
+
+def download_title_and_content(url):
+    # TODO in v1 code I had the IF 
+    # if  "application" in r.headers['Content-Type'] or "image" in r.headers['Content-Type']:
+    """
+    1. Fetch by trafilatura
+    2. BS for deleting attributes of pre, code, li
+    3. additional replacements bcs trafilatura can't catch some code blocks
+    """
+    try:
+        downloaded_bs = BeautifulSoup(    trafilatura.fetch_url(url)
+                                        , features="html.parser")
+        title_all = [x.get_text() for x in downloaded_bs.find_all('title')]
+
+        title = title_all[0] if title_all  else None
+
+
+        [tag.attrs.clear() for tag in downloaded_bs.find_all(['pre','code',"li"])]
+        cleaned_html = downloaded_bs.prettify()
+
+        sent=trafilatura.extract(
+            (
+                cleaned_html
+                .replace("</code></pre>", "</code>```</pre>")
+                .replace("<pre><code", "<pre>```<code")
+                .replace("<li>", "<li>\n")
+            )
+            #, output_format='xml'
+            # ,include_images=True
+            ,include_formatting=True
+            , include_links=True
+            # ,favor_precision=True
+            ,include_comments=True
+        ).replace('```', "\n```\n")
+    except:
+        sent = ''
+        title = ''
+
+    return [ title , sent ]
+
+
+
+
+def save_to_file(file_name,cnt_str='',mt_dict=None,folder_path=DWN_VAULT_PATH):
+    ret          = frontmatter.Post(content='')
+    ret.content  = cnt_str
+    ret.metadata = mt_dict
+
+    bool = True
+    try:
+        with open(os.path.join(folder_path,file_name), "w", encoding="utf-8") as f:
+            f = f.write(frontmatter.dumps(ret))
+    except:
+        bool = False
+        # TODO warning
+    return bool
+
+def get_valid_filename(str):
+    return "".join( x for x in str if (x.isalnum() or x in "._- "))
+
+def first_try_url(url):
+    r = requests.head(url, allow_redirects=True)
+    return [r.status_code, r.headers['Content-Type']]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def generate_hash(file_or_str):
+    
+    if isinstance(file_or_str, str):
+        s = file_or_str
+    elif hasattr(file_or_str, "read"): 
+        s = file_or_str.read()
+    return hashlib.md5(s.encode()).hexdigest()
+
+def get_yaml_meta_from_file(fd):
+    ret     = None
+    if hasattr(fd, "read"): 
+        f = fd.read()
+    else:
+        with open(fd, "r", encoding="utf-8") as f:
+            f = f.read()
+    md      = markdown.Markdown(extensions=['full_yaml_metadata'])
+    md.convert(f)
+    
+    if md.Meta !="" and md.Meta!= None:
+        ret = md.Meta
+    # ret = list(filter(lambda x: x is not None, ret))
+    return ret
+
+
+def get_vault_files_as_df(folder_path=DWN_VAULT_PATH):
+    # https://stackoverflow.com/questions/59197529/get-information-about-files-in-a-directory-and-print-in-a-table
+    directory = Path(folder_path)
+    paths = []
+    filename = []
+    size = []
+    hashes = []
+    modified = []
+    yaml_meta = []
+    files           = list(directory.glob('**/*.md'))
+
+    for file in files:
+        paths.append(file.parents[0])
+        filename.append(file.parts[-1])
+        size.append(file.stat().st_size)
+        modified.append(datetime.fromtimestamp(file.stat().st_mtime))
+        with open(file, encoding="utf-8") as f:        
+            hashes.append(hashlib.md5(f.read().encode()).hexdigest())
+        yaml_meta.append(get_yaml_meta_from_file(os.path.join(file.parents[0],file.parts[-1]) ))
+
+    columns         = ['f_path', 'f_Name'  , 'f_size'   ,'f_lm', 'f_ash', 'f_yaml'    ]
+    data            = [paths ,  filename    , size          , modified      , hashes    , yaml_meta ]
+    df              = pd.DataFrame(dict(zip(columns, data)))
+    df              = df.join(pd.json_normalize(df['YAML']))
+    return df
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# pd.options.display.width = 0
+# pd.options.display.width = 600
+# pd.set_option('display.max_columns', None)
+# pd.set_option('display.expand_frame_repr', False)
+# pd.set_option('max_colwidth', None)
