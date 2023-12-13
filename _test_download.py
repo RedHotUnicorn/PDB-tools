@@ -23,6 +23,8 @@ df['done']                    = df                .apply(lambda x: u.save_to_fil
                                                                                         ,gold_link_hash     = x.gold_link_hash 
                                                                                         ,test               = 'test' 
                                                                                         ,md_hash            = x.md_hash
+                                                                                    #     TODO Status of downloading
+                                                                                    # TODO does file was updated/downloaded manually?
                                                                                         )
                                                                                     ) 
                                                             , axis=1 )
