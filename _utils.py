@@ -19,7 +19,7 @@ from difflib import SequenceMatcher
 import  trafilatura
 from    bs4 import BeautifulSoup
 from    pathlib import Path
-from    datetime import datetime
+import datetime
 import  hashlib
 import  uuid
 import  frontmatter
@@ -315,6 +315,9 @@ def base_link_to_gold_link(base_link):
 
     return gold_link
 
+def get_hostname(link):
+    return urllib.parse.urlsplit(link).hostname
+
 # import requests
 # response = requests.head('https://m.youtube.com/playlist?list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL', allow_redirects=True) # https://stackoverflow.com/questions/70560247/bypassing-eu-consent-request
 # response = requests.head('''https://www.linkedin.com/posts/aurelienvautier_businessintelligence-dataanalytics-dashboard-activity-7097459717383311360-db1X''', allow_redirects=True) # https://stackoverflow.com/questions/70560247/bypassing-eu-consent-request
@@ -383,7 +386,7 @@ def download_title_and_content(url):
 
 
         [tag.attrs.clear() for tag in downloaded_bs.find_all(['pre','code',"li"])]
-        cleaned_html = downloaded_bs.prettify()
+        cleaned_html = str(downloaded_bs)
 
         sent=trafilatura.extract(
             (
@@ -431,7 +434,12 @@ def get_valid_filename(str):
 
 def first_try_url(url):
     r = requests.head(url, allow_redirects=True)
-    return [r.status_code, r.headers['Content-Type']]
+    status_code = r.status_code if r.status_code else -1
+    try:
+        headers_ct = r.headers['Content-Type'] if r.headers and r.headers['Content-Type'] else None
+    except:
+        headers_ct = None
+    return [status_code, headers_ct]
 
 
 
@@ -486,7 +494,7 @@ def get_vault_files_as_df(folder_path=DWN_VAULT_PATH):
         paths.append(file.parents[0])
         filename.append(file.parts[-1])
         size.append(file.stat().st_size)
-        modified.append(datetime.fromtimestamp(file.stat().st_mtime))
+        modified.append(datetime.datetime.fromtimestamp(file.stat().st_mtime))
         with open(file, encoding="utf-8") as f:        
             hashes.append(generate_hash(f))
         yaml_meta.append(get_yaml_meta_from_file(os.path.join(file.parents[0],file.parts[-1]) ))
@@ -498,6 +506,8 @@ def get_vault_files_as_df(folder_path=DWN_VAULT_PATH):
     return df
 
 
+def getdate():
+    return datetime.date.today()
 
 
 
