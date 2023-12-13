@@ -23,6 +23,7 @@ from    datetime import datetime
 import  hashlib
 import  uuid
 import  frontmatter
+from yaml import CSafeDumper as SafeDumper
 
 
 """
@@ -411,11 +412,15 @@ def save_to_file(file_name,cnt_str='',mt_dict=None,folder_path=DWN_VAULT_PATH):
     ret          = frontmatter.Post(content='')
     ret.content  = cnt_str
     ret.metadata = mt_dict
+    # print(mt_dict)
+    # print(ret.metadata)
 
     bool = True
     try:
+
         with open(os.path.join(folder_path,file_name), "w", encoding="utf-8") as f:
-            f = f.write(frontmatter.dumps(ret))
+            f.write(frontmatter.dumps(ret , sort_keys=False))
+            # https://github.com/eyeseast/python-frontmatter/issues/26#issuecomment-799024484
     except:
         bool = False
         # TODO warning

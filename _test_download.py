@@ -23,16 +23,14 @@ df['done']                    = df                .apply(lambda x: u.save_to_fil
                                                                                         ,gold_link_hash     = x.gold_link_hash 
                                                                                         ,test               = 'test' 
                                                                                         ,md_hash            = x.md_hash
-                                                                                    #     TODO Status of downloading
-                                                                                    # TODO does file was updated/downloaded manually?
+                                                                                        ,status_code        = x.status_code
+                                                                                        ,manually_edited    = False
+                                                                                        ,up                 = []
+                                                                                        ,left               = [] 
+                                                                                        ,right              = [] 
+                                                                                        ,down               = [] 
                                                                                         )
                                                                                     ) 
                                                             , axis=1 )
 print(df['title'])
 print(df)
-
-# u.set_meta_cont_to_file(
-#   dict(url= ['https://test.gf','test'])
-# , 'my content'
-# , r'C:\MyFiles\Code\PDB-tools_v2\out\vault\test.md'
-# )
