@@ -13,35 +13,17 @@ from IPython.display import display, Markdown, YouTubeVideo
 
 
 Model = 'medium' #@param ['tiny.en', 'tiny', 'base.en', 'base', 'small.en', 'small', 'medium.en', 'medium', 'large']
-Model = 'base' 
+Model = 'tiny' 
 
 whisper_model = whisper.load_model(Model)
 
-if Model in whisper.available_models():
-    display(Markdown(
-        f"**{Model} model is selected.**"
-    ))
-else:
-    display(Markdown(
-        f"**{Model} model is no longer available.**<br /> Please select one of the following:<br /> - {'<br /> - '.join(whisper.available_models())}"
-    ))
 
 
 
 
 
+URL = "https://www.youtube.com/watch?v=Z8yL3zkudZU"
 
-
-
-
-#@markdown #### **Youtube video or playlist**
-URL = "https://www.youtube.com/watch?v=Lar-zjI3CTM" #@param {type:"string"}
-# store_audio = True #@param {type:"boolean"}
-#@markdown ---
-#@markdown #### **Google Drive video, audio (mp4, wav), or folder containing video and/or audio files**
-video_path = "" #@param {type:"string"}
-#@markdown ---
-#@markdown **Run this cell again if you change the video.**
 
 video_path_local_list = []
 
