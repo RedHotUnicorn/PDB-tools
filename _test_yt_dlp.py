@@ -9,6 +9,7 @@ file2 = 'out/' + u.generate_hash(url) +'.vtt'
 
 ydl_opts = {
       'writeautomaticsub': True,
+      'writedescription': True,
         'subtitlesformat': 'vtt',
     'skip_download': True,
     "sub_lang": "ru,en" ,
@@ -23,3 +24,5 @@ with yt_dlp.YoutubeDL(ydl_opts) as ydl:
 f = open('out/d5cce4b58b67502890cb3286833020da.vtt.en.fixed.vtt','w')
 f.write(u.fix_youtube_vtt('out/d5cce4b58b67502890cb3286833020da.vtt.en.vtt'))
 f.close() 
+
+
