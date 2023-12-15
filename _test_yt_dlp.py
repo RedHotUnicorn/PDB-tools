@@ -1,28 +1,44 @@
 import yt_dlp
 import _utils as u
+import os
 
 url = "https://www.youtube.com/watch?v=Z8yL3zkudZU"
 url = 'https://www.youtube.com/watch?v=P1u3UZQmaRo' 
+url = 'https://www.youtube.com/watch?v=tNrlSai6JGA' 
 
-file1 = 'out/' + u.generate_hash(url) +'.vtt'
-file2 = 'out/' + u.generate_hash(url) +'.vtt'
+file_tmpl = 'out/' + u.generate_hash(url)
+langs = ["en","ru"]
+
+files = []
+for l in langs:
+    files.append(dict( _in = file_tmpl + '.'+ l + '.vtt' 
+                      ,_out = file_tmpl + '.'+ l + '.tsv'  ))
+
 
 ydl_opts = {
-      'writeautomaticsub': True,
-      'writedescription': True,
-        'subtitlesformat': 'vtt',
+    "subtitleslangs": langs,
+    'writeautomaticsub': True,
+    "writesub":  True ,
+    "embedsubs": True,
+    'writedescription': True,
+    'subtitlesformat': 'vtt',
     'skip_download': True,
-    "sub_lang": "ru,en" ,
-    "write_sub":  True ,
-    "embed_subs": True,
-    'outtmpl': file1
+
+    'verbose': True,
+    
+    
+    
+    'outtmpl': file_tmpl
 }
 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
     ydl.download([url])
-    print('')
 
-f = open('out/d5cce4b58b67502890cb3286833020da.vtt.en.fixed.vtt','w')
-f.write(u.fix_youtube_vtt('out/d5cce4b58b67502890cb3286833020da.vtt.en.vtt'))
-f.close() 
+# f = open('out/d5cce4b58b67502890cb3286833020da.vtt.en.fixed.vtt','w')
+# f.write(u.fix_youtube_vtt('out/d5cce4b58b67502890cb3286833020da.vtt.en.vtt'))
+# f.close() 
 
+for f in files:
+    with open(f['_out'],'w',encoding='utf8') as fl:
+        fl.write(u.fix_youtube_vtt(f['_in']))
+    if os.path.exists(f['_in']): os.remove(f['_in'])
 
