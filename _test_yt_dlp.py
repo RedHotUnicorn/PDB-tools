@@ -14,11 +14,13 @@ def download_youtube_title_and_content(  url
                                         ,sub_table_ext      = 'tsv'
                                         ,langs              = ["en","ru"]
                                       ):
-
+    # TODO create subfolder for run and creat files there
+    # after run delet folder
 
     directory       = Path(folder_of_files)
     hash_word       = u.generate_hash(url)
     files           = list(directory.glob(hash_word+'*'))
+
 
 
     file_tmpl = folder_of_files + hash_word
@@ -55,25 +57,39 @@ def download_youtube_title_and_content(  url
 
     # print(video_title)
     # print(su)
-        
+    
+    # sort by prefered lang
     files =  sorted(files, key=lambda x: (x['_lang'] == video_lang),reverse=True)
-    print(files)
+    # print(files)
         
     sent =''
+    print()
+    with open(list(directory.glob(hash_word+'*.description'))[0],'r',encoding='utf8') as f:
+        sent +='# Description \n'
+        sent += f.read()
+        sent +='\n'
+
     for f in files:
-        with open(f['_out'],'w',encoding='utf8') as fl:
-            fl.write('start\tend\ttext\n')
-            fl.write(u.fix_youtube_vtt(f['_in']))
-            sent+='# '+ f['_lang'] + '\n'
-            sent += tsv_to_md(f['_out'] ,url )
+        if Path(f['_in']).is_file():
+            with open(f['_out'],'w',encoding='utf8') as fl:
+                fl.write('start\tend\ttext\n')
+                fl.write(u.fix_youtube_vtt(f['_in']))
+                sent+='# '+ f['_lang'] + '\n'
+                sent += tsv_to_md(f['_out'] ,url )
 
             
-    
-    with open('out/test.md','w',encoding='utf8') as fl:
+
+    with open(folder_of_files + u.get_valid_filename(video_title)+'.md','w',encoding='utf8') as fl:
          fl.write(sent)
+
+
+    files           = directory.glob(hash_word+'*')
+    for f in files:
+        f.unlink()
+    
 
     return [video_title , sent]
 
-# download_youtube_title_and_content("https://www.youtube.com/watch?v=Z8yL3zkudZU")
-# download_youtube_title_and_content('https://www.youtube.com/watch?v=P1u3UZQmaRo' )
+download_youtube_title_and_content("https://www.youtube.com/watch?v=Z8yL3zkudZU")
+download_youtube_title_and_content('https://www.youtube.com/watch?v=P1u3UZQmaRo' )
 download_youtube_title_and_content('https://www.youtube.com/watch?v=tNrlSai6JGA')
