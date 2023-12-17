@@ -1,9 +1,4 @@
 import logging
-
-logging.basicConfig()
-logger = logging.getLogger('PDB_tools_logger')
-logger.setLevel(logging.DEBUG)
-
 import  os
 import  configparser
 import  sqlite3
@@ -14,35 +9,54 @@ import  re
 import  pandas as pd
 from    nltk.corpus import stopwords
 import  time
-from difflib import SequenceMatcher
+from    difflib import SequenceMatcher
 
 import  trafilatura
 from    bs4 import BeautifulSoup
 from    pathlib import Path
-import datetime
+import  datetime
 import  hashlib
 import  uuid
 import  frontmatter
-from yaml import CSafeDumper as SafeDumper
-import yt_dlp
+from    yaml import CSafeDumper as SafeDumper
+import  yt_dlp
+
+logging         .basicConfig()
+logger          = logging.getLogger('PDB-tools')
+logger          .setLevel(logging.DEBUG)
 
 
-"""
-DEFINE MOST USABLE VARS FOR DB CONNECTION
-
-"""
-LAUNCH_FOLDER  = os.path.dirname(__file__)
 
 
-config = configparser.ConfigParser()
-config.read(os.path.join(LAUNCH_FOLDER , '_config.ini'))
-logger.debug("Config path: ",os.path.join(LAUNCH_FOLDER , '_config.ini'))
+PROJECT_FOLDER  = next(p for p in Path(__file__).parents    if  "PDB-tools" in p.name 
+                                                        and len(list(p.glob('_config.ini'))) 
+                                                        and len(list(p.glob('readme.md'))) 
+                                                        and len(list(p.glob('.gitignore'))) 
+                   )
 
 
-# RESULTS_FOLDER  = os.path.dirname(__file__) + os.sep + "results" + os.sep 
 
-# CSV_NOTION      = r'C:\Users\User\Downloads\notion.csv'
-# CSV_NOTION      = config['path']['CSV_NOTION']
+if not PROJECT_FOLDER.exists():
+    logger      .error("Folder PROJECT is not exitst: {PROJECT_FOLDER}")
+
+IN_FOLDER       = PROJECT_FOLDER / 'in'
+TMP_FOLDER      = PROJECT_FOLDER / 'tmp'
+OUT_FOLDER      = PROJECT_FOLDER / 'out'
+
+config          = configparser.ConfigParser()
+config          .read(PROJECT_FOLDER / '_config.ini')
+logger          .debug(f"Config path: {PROJECT_FOLDER / '_config.ini'}")
+
+if not IN_FOLDER.exists():
+    logger      .error("Folder IN  is not exitst: ")
+if not TMP_FOLDER.exists():
+    logger      .error("Folder TMP is not exitst: ")
+if not OUT_FOLDER.exists():
+    logger      .error("Folder OUT is not exitst: ")
+
+
+
+
 DB_ID_NOTION    = config['path']['DB_ID_NOTION']
 AUTH_NOTION     = config['path']['AUTH_NOTION']
 
@@ -54,7 +68,7 @@ VAULT_CSV_PATH  = VAULT_PATH + os.sep + "CSV" + os.sep
 
 DB_FILE_NAME    = config['store']['DB_FILE_NAME']
 DB_FILE_PATH    = config['store']['DB_FILE_PATH']
-DB_CONNECTION   = sqlite3.connect(os.path.join(LAUNCH_FOLDER , DB_FILE_PATH , DB_FILE_NAME))
+DB_CONNECTION   = sqlite3.connect(os.path.join(PROJECT_FOLDER , DB_FILE_PATH , DB_FILE_NAME))
 DB_CURSOR       = DB_CONNECTION.cursor()
 DB_ERROR        = sqlite3.Error
 
@@ -259,10 +273,10 @@ def link_expand(link):
     
     the last one is not nessesary. so we need exclude it
     """
-    response = requests.head(link, allow_redirects=True)                                 # https://stackoverflow.com/questions/70560247/bypassing-eu-consent-request
+    response = requests.head(link, allow_redirects=True,verify=False)                                 # https://stackoverflow.com/questions/70560247/bypassing-eu-consent-request
     
     
-    tmp_res = [resp.url for resp in response.history if not any(x in resp.url for x in EXCL_REDIR_ARRAY)][-1] if response.history else response.url
+    tmp_res = [resp.url for resp in response.history + [response] if not any(x in resp.url for x in EXCL_REDIR_ARRAY)][-1] if response.history else response.url
     return '' if not isinstance(tmp_res, str) else tmp_res
 
     """
@@ -302,6 +316,8 @@ def base_link_to_gold_link(base_link):
         gold_link = o._replace(query=urllib.parse.urlencode(o_query)).geturl()
 
         o_hostname          = o.hostname
+        if o.scheme == '':
+             o.scheme == 'https'
         if o_hostname in STRICT_PARAMS_DICT:
             params          = STRICT_PARAMS_DICT[o_hostname]
             gold_link       = w3lib.url.url_query_cleaner(gold_link,params)
@@ -409,26 +425,164 @@ def download_article_title_and_content(url):
 
     return [ title , sent ]
 
+def tsv_to_md(file_path , url) -> str:
+    # TODO what if url whil contain &t= as parameter? 
+    ret = ''
+       
+    tsv                 = pd                .read_csv(file_path, sep='\t')
+    tsv['text_len']     = tsv['text']       .apply(lambda x :len(x))
+    tsv['start_sec']    = tsv['start']      .apply(lambda x :x/1000)
 
-def download_youtube_title_and_content(url):
-    title = ''
-    sent = ''
+    groups = []
+    group = 0
+    cumsum = 0
+    for n in tsv["text_len"]:
+        if cumsum >= 1000:
+            cumsum = 0
+            group = group + 1
+        cumsum = cumsum + n
+        groups.append(group)
+
+    # print(groups)
+
+    new                  =  ( tsv           .groupby(groups)
+                                            .agg({  'text'      :' '.join
+                                                  , 'start_sec' : lambda x: x.min().round().astype(int)})
+                            )
+
+    for index, row in new.iterrows():
+        ret += f' - ~~[▶]({url}&t={row["start_sec"]})~~  {row["text"]} \n'
+
+
+    return ret
+
+def download_youtube_audio(url,folder_of_files):
+    video_path_local_list = []
+
     ydl_opts = {
-        "write_auto_sub":True,
-        "sub_lang":'en',
-        "skip_download":True,
-        "output":'/tmp/sub.txt',
+        'format': 'm4a/bestaudio/best',
+        'outtmpl': folder_of_files+'%(id)s.%(ext)s',
+        # ℹ️ See help(yt_dlp.postprocessor) for a list of available Postprocessors and their arguments
+        'postprocessors': [{  # Extract audio using ffmpeg
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'wav',
+        }]
+    }
+
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        error_code = ydl.download(url)
+        list_video_info = [ydl.extract_info(url, download=False)]
+
+    for video_info in list_video_info:
+        video_path_local_list.append(Path(f"{video_info['id']}.wav"))
+
+    for video_path_local in video_path_local_list:
+        if video_path_local.suffix == ".mp4":
+            video_path_local = video_path_local.with_suffix(".wav")
+            result  = subprocess.run(["ffmpeg", "-i", str(video_path_local.with_suffix(".mp4")), "-vn", "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1", str(video_path_local)])
+
+
+
+
+def download_youtube_title_and_content(  url
+                                        ,folder_of_files    = 'out/'
+                                        ,sub_ext            = 'vtt'
+                                        ,sub_table_ext      = 'tsv'
+                                        ,langs              = ["en","ru"]
+                                      ):
+    # TODO create subfolder for run and creat files there
+    # after run delet folder
+
+    directory       = Path(folder_of_files)
+    hash_word       = generate_hash(url)
+    files           = list(directory.glob(hash_word+'*'))
+
+
+
+    file_tmpl = folder_of_files + hash_word
+    # langs = ["en","ru"]
+
+    files = []
+    for l in langs:
+        files.append(dict(    _in  = file_tmpl + '.'+ l + '.' + sub_ext 
+                            ,_out  = file_tmpl + '.'+ l + '.' + sub_table_ext 
+                            ,_lang = l   ))
+
+
+    ydl_opts = {
+        "subtitleslangs": langs,
+        'writeautomaticsub': True,
+        "writesub":  True ,
+        "embedsubs": True,
+        'writedescription': True,
+        'subtitlesformat': sub_ext,
+        'skip_download': True,
+
+        'outtmpl': file_tmpl
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download(url)
-    return [ title , sent ]
+        info_dict = ydl.extract_info(url, download=False)
+        
+        video_title = info_dict.get('title', None)
+        # TODO maybe we can avoid extracting to the file by _write_subtitles(self, info_dict, filename) 
+        # and write subs to variable...
+        # https://stackoverflow.com/questions/63916090/extract-the-title-of-a-youtube-video-python
+        su          = info_dict.get('requested_subtitles', None)
+        if su == None:
+            download_youtube_audio(url,folder_of_files)
+        video_lang  = info_dict.get('language', None)
+
+    # print(video_title)
+    # print(su)
+    
+    # sort by prefered lang
+    files =  sorted(files, key=lambda x: (x['_lang'] == video_lang),reverse=True)
+    # print(files)
+        
+    sent =''
+    print()
+    with open(list(directory.glob(hash_word+'*.description'))[0],'r',encoding='utf8') as f:
+        sent +='# Description \n'
+        sent += f.read()
+        sent +='\n'
+
+    for f in files:
+        if Path(f['_in']).is_file():
+            with open(f['_out'],'w',encoding='utf8') as fl:
+                fl.write('start\tend\ttext\n')
+                fl.write(fix_youtube_vtt(f['_in']))
+                sent+='# '+ f['_lang'] + '\n'
+                sent += tsv_to_md(f['_out'] ,url )
+
+            
+
+    # with open(folder_of_files + get_valid_filename(video_title)+'.md','w',encoding='utf8') as fl:
+    #      fl.write(sent)
+
+
+    files           = directory.glob(hash_word+'*')
+    for f in files:
+        f.unlink()
+    
+
+    return [video_title , sent]
 
 def try_download(link):
-    match get_hostname(link):
-        case "youtube.com" | 'youtu.be':
-            array = download_youtube_title_and_content(link)    
-        case _:
-            array = download_article_title_and_content(link)
+    print(link)
+    array = [None,None]
+    try:
+        match get_hostname(link):
+            case "youtube.com" | 'youtu.be':
+                array = download_youtube_title_and_content(link)    
+            case _:
+                array = download_article_title_and_content(link)
+    except Exception as e:
+        print('-'*20 + 'ERROR' + '-'*75)
+        print(link)
+
+        print('-'*100)
+
     
     return array
 
@@ -454,8 +608,11 @@ def get_valid_filename(str):
     return "".join( x for x in str if (x.isalnum() or x in "._- "))
 
 def first_try_url(url):
-    r = requests.head(url, allow_redirects=True)
-    status_code = r.status_code if r.status_code else -1
+    try:
+        r = requests.head(url, allow_redirects=True , verify=False)
+        status_code = r.status_code if r.status_code else -1
+    except:
+        status_code = -1
     try:
         headers_ct = r.headers['Content-Type'] if r.headers and r.headers['Content-Type'] else None
     except:
@@ -477,7 +634,7 @@ def first_try_url(url):
 
 
 def generate_hash(file_or_str):
-    
+    s = ''
     if isinstance(file_or_str, str):
         s = file_or_str
     elif hasattr(file_or_str, "read"): 

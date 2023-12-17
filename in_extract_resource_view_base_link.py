@@ -5,7 +5,7 @@ from _utils import os as os
 
 CSV_FILE_NAME   = u.config['in']['CSV_FILE_NAME']
 CSV_FILE_PATH   = u.config['in']['CSV_FILE_PATH']
-CSV             = os.path.join(u.LAUNCH_FOLDER,CSV_FILE_PATH,CSV_FILE_NAME)
+CSV             = os.path.join(u.PROJECT_FOLDER,CSV_FILE_PATH,CSV_FILE_NAME)
 
 OUT_TBL         = u.config['DB.in_extract_resources_base_url']['OUT_TBL_NAME']
 TMP_TBL         = u.config['DB.in_extract_resources_base_url']['TMP_TBL_NAME']
