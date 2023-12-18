@@ -21,9 +21,6 @@ import  frontmatter
 from    yaml import CSafeDumper as SafeDumper
 import  yt_dlp
 
-logging         .basicConfig()
-logger          = logging.getLogger('PDB-tools')
-logger          .setLevel(logging.DEBUG)
 
 
 
@@ -34,14 +31,21 @@ PROJECT_FOLDER  = next(p for p in Path(__file__).parents    if  "PDB-tools" in p
                                                         and len(list(p.glob('.gitignore'))) 
                    )
 
+IN_FOLDER       = PROJECT_FOLDER / 'in'
+TMP_FOLDER      = PROJECT_FOLDER / 'tmp'
+LOG_FOLDER      = TMP_FOLDER     / 'logs'
+OUT_FOLDER      = PROJECT_FOLDER / 'out'
+
+
+logging         .basicConfig(filename=LOG_FOLDER / str(str(datetime.date.today())+'.log') )
+logger          = logging.getLogger('PDB-tools')
+logger          .setLevel(logging.DEBUG)
 
 
 if not PROJECT_FOLDER.exists():
     logger      .error("Folder PROJECT is not exitst:")
 
-IN_FOLDER       = PROJECT_FOLDER / 'in'
-TMP_FOLDER      = PROJECT_FOLDER / 'tmp'
-OUT_FOLDER      = PROJECT_FOLDER / 'out'
+
 
 config          = configparser.ConfigParser()
 config          .read(PROJECT_FOLDER / '_config.ini')
@@ -53,12 +57,9 @@ if not TMP_FOLDER.exists():
     logger      .error("Folder TMP is not exitst: ")
 if not OUT_FOLDER.exists():
     logger      .error("Folder OUT is not exitst: ")
+if not LOG_FOLDER.exists():
+    logger      .error("Folder LOG is not exitst: ")
 
-
-
-
-DB_ID_NOTION    = config['path']['DB_ID_NOTION']
-AUTH_NOTION     = config['path']['AUTH_NOTION']
 
 
 # VAULT_PATH      = r"C:\MyFiles\PKM\PDB"
@@ -189,35 +190,6 @@ def extract_stop_words():
     f.close()
 
 
-# """
-# ######################################################################
-#                     TEXT QUERIES FOR SQL
-# ######################################################################
-# """
-
-# DROP_TBL_SQL        =   """
-#                         DROP table if exists  {};
-#                         """
-# GET_DDL_TBL_SQL     =   """
-#                         SELECT sql 
-#                         FROM sqlite_master 
-#                         WHERE 
-#                         tbl_name = '{}';
-#                         """
-# DUP_EMPTY_TBL_SQL   =   """
-#                         CREATE TABLE 
-#                         {} 
-#                         AS  SELECT * 
-#                             FROM {}
-#                         WHERE 0
-#                         """
-
-
-# """
-# ######################################################################
-#                     VIEWS TRANSFORMATIONS
-# ######################################################################
-# """
     
 import w3lib.url
 import urllib.parse
@@ -323,50 +295,34 @@ def base_link_to_gold_link(base_link):
 def get_hostname(link):
     return urllib.parse.urlsplit(link).hostname
 
-# import requests
-# response = requests.head('https://m.youtube.com/playlist?list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL', allow_redirects=True) # https://stackoverflow.com/questions/70560247/bypassing-eu-consent-request
-# response = requests.head('''https://www.linkedin.com/posts/aurelienvautier_businessintelligence-dataanalytics-dashboard-activity-7097459717383311360-db1X''', allow_redirects=True) # https://stackoverflow.com/questions/70560247/bypassing-eu-consent-request
-# # response = requests.head('''https://sql-optimizer.streamlit.app/''', allow_redirects=True) # https://stackoverflow.com/questions/70560247/bypassing-eu-consent-request
-# # response = requests.head('''https://bit.ly/3dV6cFr''', allow_redirects=True) # https://stackoverflow.com/questions/70560247/bypassing-eu-consent-request
 
 
-# for resp in response.history :
-#     # if "https://consent." not in resp.url:
-#         # print(resp.status_code, resp.url)
-#     print(resp.status_code, resp.url)
-#     print('-'*200)
-#         # 302 https://m.youtube.com/playlist?list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL
-#         # 302 https://www.youtube.com/playlist?app=desktop&list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL
-# print(response.url)
-# print(response.is_redirect)
+def fuzzy_search():
+    text1 = 'test test test test remove'
+    text2 = 'append test test test test append '
+    print(SequenceMatcher(None, text1, text2).ratio())
+    print(SequenceMatcher(None, text2, text1).ratio())
+    # text1 = 'https://m.youtube.com/playlist?list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL'
+    # text2 = 'https://www.youtube.com/playlist?app=desktop&list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL'
+    # print(SequenceMatcher(None, text1, text2).ratio())
 
-# text1 = 'https://m.youtube.com/playlist?list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL'
-# text2 = 'https://www.youtube.com/playlist?app=desktop&list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL'
-# print(SequenceMatcher(None, text1, text2).ratio())
+    # text1 = 'https://www.youtube.com/playlist?app=desktop&list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL'
+    # text2 = 'https://consent.youtube.com/ml?continue=https://www.youtube.com/playlist?app%3Ddesktop%26list%3DPL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL%26cbrd%3D1&gl=DE&hl=de&cm=2&pc=yt&src=1'
+    # print(SequenceMatcher(None, text1, text2).ratio())
 
-# text1 = 'https://www.youtube.com/playlist?app=desktop&list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL'
-# text2 = 'https://consent.youtube.com/ml?continue=https://www.youtube.com/playlist?app%3Ddesktop%26list%3DPL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL%26cbrd%3D1&gl=DE&hl=de&cm=2&pc=yt&src=1'
-# print(SequenceMatcher(None, text1, text2).ratio())
+    # text1 = 'https://sql-optimizer.streamlit.app/'
+    # text2 = 'https://share.streamlit.io/-/auth/app?redirect_uri=https%3A%2F%2Fsql-optimizer.streamlit.app%2F'
+    # print(SequenceMatcher(None, text1, text2).ratio())
 
-# text1 = 'https://sql-optimizer.streamlit.app/'
-# text2 = 'https://share.streamlit.io/-/auth/app?redirect_uri=https%3A%2F%2Fsql-optimizer.streamlit.app%2F'
-# print(SequenceMatcher(None, text1, text2).ratio())
-
-# text1 = 'https://share.streamlit.io/-/auth/app?redirect_uri=https%3A%2F%2Fsql-optimizer.streamlit.app%2F'
-# text2 = 'https://sql-optimizer.streamlit.app/-/login?payload=MTcwMjMyNTkxM3xkYzMycUFQUC16V3p6ZmZENEJWTnp6VVR5S1RrTTliZ0ZVS2tvUEhzUVRUMG1TSlhqWnN6OU1qdmFENDBpWUJ6ZWxHTURjUFFwVnJQaUZMcFlqRnNmSDhiZmpWd09aYks5MjBPVks3cGtIbjR2U21TMWtzTXI5dDZ6NS1saElEcm9zY0pkX3hBN2NoVGJZMUdFd1dRX1pmX2VwbE1qQlJaOTA1enJ0R1hMQ3VHUE9JOTUwWi1veTFLNGdYeHlSWF9yazVpLTBBTk9BYTZxTW9GU0lNMjVqYkRPT0FtZk1HNzlHYUQ1czZ0N3ZKT1pUaFdVaXl0MDRpcU84ajh6QzlPOG0wVWY4T1QwSklTVmg4WE04M0N3bFJEdXhBMmdocnYxclhlb2xCRUhFc2x3bVNJZ2h2ZGRfb3VIN0V2WU1zZjUyUU91N3o4dWplbVEwakNXYi00VlpKdFdHLWczQnBhUjBXcUxlSmlQdjh5Q0taQ3d3ZlRNeHRNZzFkS0lWNFpsWUZQTXFkVGF4eFBqRFl3VDBJQUVZbTc1S3F6QXN0SS1TRm02c2t0RzNtNE9FeE1vMVVPVXJudmdrZDZzVnNueXd5dXRGemJsYWN5SFNXN2xub0hkdnRvd0hZbGtzRjk2SzBVOXhXRUNpaGcyRWMzZzdOc1VlRk9LT044SDdSSG9JdlpsMFFGeUUzeTlpRFVXTFF2U0t2OXx6xAddRJr5D34xPszvGcHOu7Dy_64N-h9R04W_vff92Q%3D%3D'
-# print(SequenceMatcher(None, text1, text2).ratio())
+    # text1 = 'https://share.streamlit.io/-/auth/app?redirect_uri=https%3A%2F%2Fsql-optimizer.streamlit.app%2F'
+    # text2 = 'https://sql-optimizer.streamlit.app/-/login?payload=MTcwMjMyNTkxM3xkYzMycUFQUC16V3p6ZmZENEJWTnp6VVR5S1RrTTliZ0ZVS2tvUEhzUVRUMG1TSlhqWnN6OU1qdmFENDBpWUJ6ZWxHTURjUFFwVnJQaUZMcFlqRnNmSDhiZmpWd09aYks5MjBPVks3cGtIbjR2U21TMWtzTXI5dDZ6NS1saElEcm9zY0pkX3hBN2NoVGJZMUdFd1dRX1pmX2VwbE1qQlJaOTA1enJ0R1hMQ3VHUE9JOTUwWi1veTFLNGdYeHlSWF9yazVpLTBBTk9BYTZxTW9GU0lNMjVqYkRPT0FtZk1HNzlHYUQ1czZ0N3ZKT1pUaFdVaXl0MDRpcU84ajh6QzlPOG0wVWY4T1QwSklTVmg4WE04M0N3bFJEdXhBMmdocnYxclhlb2xCRUhFc2x3bVNJZ2h2ZGRfb3VIN0V2WU1zZjUyUU91N3o4dWplbVEwakNXYi00VlpKdFdHLWczQnBhUjBXcUxlSmlQdjh5Q0taQ3d3ZlRNeHRNZzFkS0lWNFpsWUZQTXFkVGF4eFBqRFl3VDBJQUVZbTc1S3F6QXN0SS1TRm02c2t0RzNtNE9FeE1vMVVPVXJudmdrZDZzVnNueXd5dXRGemJsYWN5SFNXN2xub0hkdnRvd0hZbGtzRjk2SzBVOXhXRUNpaGcyRWMzZzdOc1VlRk9LT044SDdSSG9JdlpsMFFGeUUzeTlpRFVXTFF2U0t2OXx6xAddRJr5D34xPszvGcHOu7Dy_64N-h9R04W_vff92Q%3D%3D'
+    # print(SequenceMatcher(None, text1, text2).ratio())
 
 
-# text1 = 'https://www.linkedin.com/posts/aurelienvautier_businessintelligence-dataanalytics-dashboard-activity-7097459717383311360-db1X'
-# text2 = 'https://www.linkedin.com/signup/cold-join?session_redirect=https%3A%2F%2Fwww.linkedin.com%2Ffeed%2Fupdate%2Furn%3Ali%3Aactivity%3A7097459717383311360'
-# print(SequenceMatcher(None, text1, text2).ratio())
+    # text1 = 'https://www.linkedin.com/posts/aurelienvautier_businessintelligence-dataanalytics-dashboard-activity-7097459717383311360-db1X'
+    # text2 = 'https://www.linkedin.com/signup/cold-join?session_redirect=https%3A%2F%2Fwww.linkedin.com%2Ffeed%2Fupdate%2Furn%3Ali%3Aactivity%3A7097459717383311360'
+    # print(SequenceMatcher(None, text1, text2).ratio())
 
-
-
-text1 = 'test test test test remove'
-text2 = 'append test test test test append '
-print(SequenceMatcher(None, text1, text2).ratio())
-print(SequenceMatcher(None, text2, text1).ratio())
 
 """
 ######################################################################
