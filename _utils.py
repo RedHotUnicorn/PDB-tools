@@ -37,7 +37,7 @@ PROJECT_FOLDER  = next(p for p in Path(__file__).parents    if  "PDB-tools" in p
 
 
 if not PROJECT_FOLDER.exists():
-    logger      .error("Folder PROJECT is not exitst: {PROJECT_FOLDER}")
+    logger      .error("Folder PROJECT is not exitst:")
 
 IN_FOLDER       = PROJECT_FOLDER / 'in'
 TMP_FOLDER      = PROJECT_FOLDER / 'tmp'
@@ -66,17 +66,17 @@ VAULT_PATH      = config['path']['VAULT_PATH']
 DWN_VAULT_PATH  = config['path']['DWN_VAULT_PATH']
 VAULT_CSV_PATH  = VAULT_PATH + os.sep + "CSV" + os.sep 
 
-DB_FILE_NAME    = config['store']['DB_FILE_NAME']
-DB_FILE_PATH    = config['store']['DB_FILE_PATH']
-DB_CONNECTION   = sqlite3.connect(os.path.join(PROJECT_FOLDER , DB_FILE_PATH , DB_FILE_NAME))
-DB_CURSOR       = DB_CONNECTION.cursor()
-DB_ERROR        = sqlite3.Error
+# DB_FILE_NAME    = config['store']['DB_FILE_NAME']
+# DB_FILE_PATH    = config['store']['DB_FILE_PATH']
+# DB_CONNECTION   = sqlite3.connect(os.path.join(PROJECT_FOLDER , DB_FILE_PATH , DB_FILE_NAME))
+# DB_CURSOR       = DB_CONNECTION.cursor()
+# DB_ERROR        = sqlite3.Error
 
 
 # YT_DLP_EXE      = r"C:\Program Files\yt-dlp\yt-dlp.exe"
-YT_DLP_EXE      = config['path']['YT_DLP_EXE']
+# YT_DLP_EXE      = config['path']['YT_DLP_EXE']
 # YT_DLP_FIX_VTT  = r"C:\Program Files\yt-dlp\fix_youtube_vtt.py"
-YT_DLP_FIX_VTT  = config['path']['YT_DLP_FIX_VTT']
+# YT_DLP_FIX_VTT  = config['path']['YT_DLP_FIX_VTT']
 
 # YT_DLP_GET_SUBS    = rf'''
 #     "{YT_DLP_EXE}" --encoding utf-8 --no-check-certificate --sub-lang "ru,en" --write-auto-sub --write-sub --embed-subs --skip-download -o "test" "{{0}}" 1>nul 
@@ -85,17 +85,17 @@ YT_DLP_FIX_VTT  = config['path']['YT_DLP_FIX_VTT']
 #     &&  del test.*
 # '''.replace('\n','')
 
-# TODO probably i can use https://github.com/bindestriche/srt_fix
-YT_DLP_GET_SUBS   = rf'''
-    chcp 65001 && 
-    "{YT_DLP_EXE}" --no-check-certificate --sub-lang "ru,en" --write-auto-sub --write-sub --embed-subs --skip-download -o "test" "{{0}}" 1>nul 
-    && (    (      
-                if exist test.ru.vtt (py "{YT_DLP_FIX_VTT}" test.ru.vtt  && echo:  && type test.ru.*.txt && echo: )
-            ) 
-            &   if exist test.en.vtt (py "{YT_DLP_FIX_VTT}" test.en.vtt  && echo:  && type test.en.*.txt ) 
-            &&  del test.*
-        ) 
-'''.replace('\n','')
+# # probably i can use https://github.com/bindestriche/srt_fix
+# YT_DLP_GET_SUBS   = rf'''
+#     chcp 65001 && 
+#     "{YT_DLP_EXE}" --no-check-certificate --sub-lang "ru,en" --write-auto-sub --write-sub --embed-subs --skip-download -o "test" "{{0}}" 1>nul 
+#     && (    (      
+#                 if exist test.ru.vtt (py "{YT_DLP_FIX_VTT}" test.ru.vtt  && echo:  && type test.ru.*.txt && echo: )
+#             ) 
+#             &   if exist test.en.vtt (py "{YT_DLP_FIX_VTT}" test.en.vtt  && echo:  && type test.en.*.txt ) 
+#             &&  del test.*
+#         ) 
+# '''.replace('\n','')
 
 
 
@@ -106,20 +106,7 @@ URL_PROP_REGEXP     = r"url::.*"
 # URL_STRIKE_REGEXP   = r"~~\s*" + URL_REGEXP + r"\s*~~"
 URL_STRIKE_REGEXP   = r"\~\~\s*\[.*\]\(https?\:\/\/[a-zA-Z0-9\.\/\?\:@\-_=#]+\.(?:[a-zA-Z]){2,6}(?:[a-zA-Z0-9\.\&\/\?\:@\-_=#])*\)\s*\~\~"
 URL_STRIKE_REGEXP   = r"\~\~\s*\[.*\]\("+ URL_REGEXP +r"\)\s*\~\~"
-def run_extracting_YT_subs(YT_URL):
-    """
-    This functions uses YT_DLP_GET_SUBS as string to be launched with url as params
-    
-    """
-    # TODO Somehow this process when runs print additional chars like "test.ru.vtt.txt" 
-    res = subprocess.run(
-                            YT_DLP_GET_SUBS.format(YT_URL) 
-                            , shell=True
-                            , text=True
-                            , stdout=subprocess.PIPE
-                            , encoding="utf-8") 
-    time.sleep(5)
-    return res.stdout
+
 
 
 def get_Meta_Property_from_MD(path,file,prop):
@@ -202,35 +189,36 @@ def extract_stop_words():
     f.close()
 
 
-"""
-######################################################################
-                    TEXT QUERIES FOR SQL
-######################################################################
-"""
+# """
+# ######################################################################
+#                     TEXT QUERIES FOR SQL
+# ######################################################################
+# """
 
-DROP_TBL_SQL        =   """
-                        DROP table if exists  {};
-                        """
-GET_DDL_TBL_SQL     =   """
-                        SELECT sql 
-                        FROM sqlite_master 
-                        WHERE 
-                        tbl_name = '{}';
-                        """
-DUP_EMPTY_TBL_SQL   =   """
-                        CREATE TABLE 
-                        {} 
-                        AS  SELECT * 
-                            FROM {}
-                        WHERE 0
-                        """
+# DROP_TBL_SQL        =   """
+#                         DROP table if exists  {};
+#                         """
+# GET_DDL_TBL_SQL     =   """
+#                         SELECT sql 
+#                         FROM sqlite_master 
+#                         WHERE 
+#                         tbl_name = '{}';
+#                         """
+# DUP_EMPTY_TBL_SQL   =   """
+#                         CREATE TABLE 
+#                         {} 
+#                         AS  SELECT * 
+#                             FROM {}
+#                         WHERE 0
+#                         """
 
 
-"""
-######################################################################
-                    VIEWS TRANSFORMATIONS
-######################################################################
-"""
+# """
+# ######################################################################
+#                     VIEWS TRANSFORMATIONS
+# ######################################################################
+# """
+    
 import w3lib.url
 import urllib.parse
 import requests
