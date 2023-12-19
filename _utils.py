@@ -262,8 +262,16 @@ def base_link_to_gold_link(base_link):
     gold_link       = base_link
 
     try:
-        gold_link = gold_link.replace("&amp;", "&")
-        gold_link =  link_expand(gold_link)                                             # try_expand      = urlexpander.expand(base_link , use_head=False)                # gold_link = url_normalize(urlexpander.expand(base_link)) 
+        gold_link       = gold_link.replace("&amp;", "&")
+
+        o               = urllib.parse.urlsplit(gold_link)
+        gold_link       = o._replace(  scheme=o.scheme if o.scheme else "https"                 
+                                     , netloc=o.netloc if o.netloc else o.path
+                                     , path  ="" if o.path and not o.netloc and not o.scheme  else o.path
+                                    ).geturl()                                          # https://stackoverflow.com/a/61859560/5353177
+
+
+        gold_link       =  link_expand(gold_link)                                       # try_expand      = urlexpander.expand(base_link , use_head=False)                # gold_link = url_normalize(urlexpander.expand(base_link)) 
                                                                                         # if      (   "__CLIENT_ERROR__".lower()          not in try_expand.lower() ) \
                                                                                         #     and (   "__connectionpool_error__".lower()  not in try_expand.lower() ):    # __CLIENT_ERROR__: https://github.com/SMAPPNYU/urlExpander/issues http://t.me\__connectionpool_error__/
                                                                                         #     gold_link   = try_expand                          
@@ -271,13 +279,16 @@ def base_link_to_gold_link(base_link):
         o               = urllib.parse.urlsplit(gold_link)
         o_query         = dict(urllib.parse.parse_qsl(o.query))                         # https://gist.github.com/rokcarl/20b5bf8dd9b1998880b7
         for key in REMOVE_PARAMS_ARRAY:
-            o_query.pop(key, None)                                                      # https://stackoverflow.com/a/70785605/5353177
+            o_query.pop(key, None)     
+                                                             # https://stackoverflow.com/a/70785605/5353177
 
-        gold_link = o._replace(query=urllib.parse.urlencode(o_query)).geturl()
+        gold_link = o._replace(query=urllib.parse.urlencode(o_query)
+                               ,scheme=o.scheme if o.scheme == '' else "https"
+                               ).geturl()
 
         o_hostname          = o.hostname
-        if o.scheme == '':
-             o.scheme == 'https'
+        # if gold_link.scheme == '':
+        #      gold_link.scheme == 'https'
         if o_hostname in STRICT_PARAMS_DICT:
             params          = STRICT_PARAMS_DICT[o_hostname]
             gold_link       = w3lib.url.url_query_cleaner(gold_link,params)
@@ -352,9 +363,9 @@ def download_article_title_and_content(url):
         sent=trafilatura.extract(
             (
                 cleaned_html
-                .replace("</code></pre>", "</code>```</pre>")
-                .replace("<pre><code", "<pre>```<code")
-                .replace("<li>", "<li>\n")
+                .replace("</pre>", "```</pre>")
+                .replace("<pre>", "<pre>```")
+                # .replace("<li>", "<li>\n")
             )
             #, output_format='xml'
             # ,include_images=True
@@ -374,7 +385,8 @@ def tsv_to_md(file_path , url) -> str:
     ret = ''
        
     tsv                 = pd                .read_csv(file_path, sep='\t')
-    tsv['text_len']     = tsv['text']       .apply(lambda x :len(x))
+    tsv                 .dropna(inplace=True)
+    tsv['text_len']     = tsv['text']       .apply(lambda x :len(str(x)))
     tsv['start_sec']    = tsv['start']      .apply(lambda x :x/1000)
 
     groups = []
@@ -405,7 +417,8 @@ def download_youtube_audio(url,folder_of_files):
 
     ydl_opts = {
         'format': 'm4a/bestaudio/best',
-        'outtmpl': folder_of_files+'%(id)s.%(ext)s',
+        "paths" : dict(home = str(folder_of_files)) ,
+        'outtmpl': '%(id)s.%(ext)s',
         # ℹ️ See help(yt_dlp.postprocessor) for a list of available Postprocessors and their arguments
         'postprocessors': [{  # Extract audio using ffmpeg
             'key': 'FFmpegExtractAudio',
@@ -429,21 +442,18 @@ def download_youtube_audio(url,folder_of_files):
 
 
 def download_youtube_title_and_content(  url
-                                        ,folder_of_files    = 'out/'
                                         ,sub_ext            = 'vtt'
                                         ,sub_table_ext      = 'tsv'
                                         ,langs              = ["en","ru"]
                                       ):
-    # TODO create subfolder for run and creat files there
-    # after run delet folder
 
-    directory       = Path(folder_of_files)
+    directory       = TMP_FOLDER / 'download_youtube_title_and_content'
     hash_word       = generate_hash(url)
     files           = list(directory.glob(hash_word+'*'))
 
 
 
-    file_tmpl = folder_of_files + hash_word
+    file_tmpl = hash_word
     # langs = ["en","ru"]
 
     files = []
@@ -461,7 +471,7 @@ def download_youtube_title_and_content(  url
         'writedescription': True,
         'subtitlesformat': sub_ext,
         'skip_download': True,
-
+        'paths' : dict(home = str(directory))  ,
         'outtmpl': file_tmpl
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -474,7 +484,7 @@ def download_youtube_title_and_content(  url
         # https://stackoverflow.com/questions/63916090/extract-the-title-of-a-youtube-video-python
         su          = info_dict.get('requested_subtitles', None)
         if su == None:
-            download_youtube_audio(url,folder_of_files)
+            download_youtube_audio(url,IN_FOLDER / 'audio')
         video_lang  = info_dict.get('language', None)
 
     # print(video_title)
@@ -492,12 +502,12 @@ def download_youtube_title_and_content(  url
         sent +='\n'
 
     for f in files:
-        if Path(f['_in']).is_file():
-            with open(f['_out'],'w',encoding='utf8') as fl:
+        if (directory / f['_in']).is_file():
+            with (directory / f['_out']).open('w',encoding='utf8') as fl:
                 fl.write('start\tend\ttext\n')
-                fl.write(fix_youtube_vtt(f['_in']))
+                fl.write(fix_youtube_vtt( str(directory / f['_in']) )  )
                 sent+='# '+ f['_lang'] + '\n'
-                sent += tsv_to_md(f['_out'] ,url )
+                sent += tsv_to_md(str(directory / f['_out'])  ,url )
 
             
 
@@ -517,7 +527,7 @@ def try_download(link):
     array = [None,None]
     try:
         match get_hostname(link):
-            case "youtube.com" | 'youtu.be':
+            case "youtube.com" | 'youtu.be' | "www.youtube.com":
                 array = download_youtube_title_and_content(link)    
             case _:
                 array = download_article_title_and_content(link)

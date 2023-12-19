@@ -1,97 +1,65 @@
 import trafilatura
 from bs4 import BeautifulSoup
-import requests
+import _utils as u
 
 
 url="https://microsoft.github.io/lida/"
+
+# url = "https://rxresu.me/"
+url = "https://stackoverflow.com/a/69178995"
+# url = 'https://nesslabs.com/best'  
+# url = "https://microsoft.github.io/generative-ai-for-beginners/#/"
+# url = 'https://www.reddit.com/r/Zettelkasten/s/tV7CFNg5rZ'
+# url = 'https://thisisdata.ru/blog/kak-pravilno-organizovat-rabotu-s-gipotezami/'
+# url = 'https://thisisdata.ru/blog/uchimsya-primenyat-okonnyye-funktsii/'
 # url = "https://habr.com/ru/articles/696274/"
 # url = "https://habr.com/ru/articles/734980/"
-# url = "https://rxresu.me/"
-# url = "https://stackoverflow.com/a/69178995"
-url = 'https://nesslabs.com/best'  
-url = "https://microsoft.github.io/generative-ai-for-beginners/#/"
-url = 'https://www.reddit.com/r/Zettelkasten/s/tV7CFNg5rZ'
-url = 'https://thisisdata.ru/blog/kak-pravilno-organizovat-rabotu-s-gipotezami/'
 
-# from requests_html import HTMLSession
+DEBUG_FOLDER = u.TMP_FOLDER / '_test_trafilatura'
 
-# session = HTMLSession()
-# headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
-# r = session.get(url,headers=headers,allow_redirects=True)
+def download_article_title_and_content(url):
+    # TODO in v1 code I had the IF 
+    # if  "application" in r.headers['Content-Type'] or "image" in r.headers['Content-Type']:
+    """
+    1. Fetch by trafilatura
+    2. BS for deleting attributes of pre, code, li
+    3. additional replacements bcs trafilatura can't catch some code blocks
+    """
+    try:
+        downloaded_bs = BeautifulSoup(    trafilatura.fetch_url(url)
+                                        , features="html.parser")
+        title_all = [x.get_text() for x in downloaded_bs.find_all('title')]
 
-# r.html.render()
-
-
-# f = open("out/_test_trafiltura_requests.html", "w",encoding='utf-8')
-# f.write(r.html.html)
-# f.close()
-
-downloaded = trafilatura.fetch_url(url)
-f = open("out/_test_trafiltura_downloaded.html", "w",encoding='utf-8')
-f.write(downloaded)
-f.close()
+        title = title_all[0] if title_all  else None
 
 
-downloaded_bs = BeautifulSoup(downloaded, features="html.parser")
-[tag.attrs.clear() for tag in downloaded_bs.find_all(['pre','code',"li"])]
+        [tag.attrs.clear() for tag in downloaded_bs.find_all(['pre','code',"li"])]
+        cleaned_html = str(downloaded_bs)
 
+        with (DEBUG_FOLDER / 'cleaned.html' ).open('w',encoding='utf8') as f:
+            f.write(cleaned_html)
 
-f = open("out/_test_trafiltura_downloaded_bs.html", "w",encoding='utf-8')
-f.write(downloaded_bs.prettify(formatter=None))
-f.close()
+        sent=trafilatura.extract(
+            (
+                cleaned_html
+                .replace("</pre>", "```</pre>")
+                .replace("<pre>", "<pre>```")
+                # .replace("<li>", "<li>\n")
+            )
+            #, output_format='xml'
+            # ,include_images=True
+            ,include_formatting=True
+            , include_links=True
+            # ,favor_precision=True
+            ,include_comments=True
+        ).replace('```', "\n```\n")
 
+        with (DEBUG_FOLDER / 'sent.md' ).open('w',encoding='utf8') as f:
+            f.write(sent)
+    except:
+        sent = ''
+        title = ''
 
+    return [ title , sent ]
 
-
-cleaned_html = downloaded_bs.prettify(formatter=None)
-cleaned_html = str(downloaded_bs)
-
-
-# https://github.com/adbar/trafilatura/issues/351
-sent=trafilatura.extract(
-    	(
-            cleaned_html
-            .replace("</code></pre>", "</code>```</pre>")
-            .replace("<pre><code", "<pre>```<code")
-            .replace("<li>", "\n<li>")
-		)
-	#, output_format='xml'
-      # ,include_images=True
-      ,include_formatting=True
-      , include_links=True
-      # ,favor_precision=True
-      ,include_comments=True
-).replace('```', "\n```\n")
-
-
-
-f = open("out/_test_trafiltura.md", "w",encoding='utf-8')
-f.write(sent)
-f.close()
-
-
-
-sent=trafilatura.extract(
-    	(
-            downloaded
-            .replace("</code></pre>", "</code>```</pre>")
-            .replace("<pre><code", "<pre>```<code")
-            .replace("<li>", "<li>\n")
-		)
-	#, output_format='xml'
-      # ,include_images=True
-      ,include_formatting=True
-      , include_links=True
-      # ,favor_precision=True
-      ,include_comments=True
-).replace('```', "\n```\n")
-
-
-
-f = open("out/_test_trafiltura_pure.md", "w",encoding='utf-8')
-f.write(sent)
-f.close()
-
-
-
-
+download_article_title_and_content(url)
