@@ -20,6 +20,18 @@ df['done']                    = df                .apply(lambda x:0     if  x.pr
                                                                                                                         , axis=1 )
 df['gold_link']               = df                .apply(lambda x:u.base_link_to_gold_link(x.base_link)                 , axis=1 , result_type='expand' )
 df['gold_hostname']           = df                .apply(lambda x:u.get_hostname(x.gold_link)                           , axis=1 , result_type='expand' )
+
+# print duplicates
+print(df[df.duplicated(['gold_link'])])
+
+# get only undup
+df                            = df                .drop_duplicates('gold_link')
+
+
+
+
+
+
 df[['status_code','ct']]      = df                .apply(lambda x: u.first_try_url(x.gold_link)                         , axis=1 , result_type='expand' )
 
 df.to_excel(r'tmp/df_after_first_try_url.xlsx')
