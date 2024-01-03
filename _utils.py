@@ -22,7 +22,8 @@ from    yaml import CSafeDumper as SafeDumper
 import  yt_dlp
 
 
-
+def get_valid_filename(str):
+    return "".join( x for x in str if (x.isalnum() or x in "._- "))
 
 
 PROJECT_FOLDER  = next(p for p in Path(__file__).parents    if  "PDB-tools" in p.name 
@@ -37,7 +38,7 @@ LOG_FOLDER      = TMP_FOLDER     / 'logs'
 OUT_FOLDER      = PROJECT_FOLDER / 'out'
 
 
-logging         .basicConfig(filename=LOG_FOLDER / str(str(datetime.date.today())+'.log') )
+logging         .basicConfig(filename=LOG_FOLDER / get_valid_filename(str(str(datetime.datetime.now())+'.log')) ,encoding='utf8' )
 logger          = logging.getLogger('PDB-tools')
 logger          .setLevel(logging.DEBUG)
 
@@ -210,7 +211,8 @@ STRICT_PARAMS_DICT  = {
 }
 
 ADD_PARAMS_DICT  = {
-      "t.me" : {"embed":1 , "mode": "tme"}
+        "t.me" : {"embed":1 , "mode": "tme"}
+      , "www.reddit.com" : {"rdt":0 }
 }
 
 EXCL_REDIR_ARRAY    = [
@@ -374,6 +376,8 @@ def download_article_title_and_content(url):
             # ,favor_precision=True
             ,include_comments=True
         ).replace('```', "\n```\n")
+
+        sent = re.sub(r"([\s^])(\#[^\s#]+)", r"\1\\\2", sent)
     except:
         sent = None
         title = None
@@ -564,8 +568,6 @@ def save_to_file(file_name,cnt_str='',mt_dict=None,folder_path=DWN_VAULT_PATH):
         # TODO warning
     return bool
 
-def get_valid_filename(str):
-    return "".join( x for x in str if (x.isalnum() or x in "._- "))
 
 def first_try_url(url):
     try:
@@ -637,10 +639,12 @@ def get_vault_files_as_df(folder_path=DWN_VAULT_PATH):
             hashes.append(generate_hash(f))
         yaml_meta.append(get_yaml_meta_from_file(os.path.join(file.parents[0],file.parts[-1]) ))
 
-    columns         = ['f_path', 'f_Name'  , 'f_size'   ,'f_lm', 'f_ash', 'f_yaml'    ]
+    columns         = ['f_path', 'f_Name'  , 'f_size'   ,'f_lm', 'f_hash', 'f_yaml'    ]
     data            = [paths ,  filename    , size          , modified      , hashes    , yaml_meta ]
     df              = pd.DataFrame(dict(zip(columns, data)))
-    df              = df.join(pd.json_normalize(df['YAML']))
+    df              = df.join(pd.json_normalize(df['f_yaml']))
+    # in case if vault is empty
+    df['gold_link'] = df.get('gold_link', '')    
     return df
 
 
