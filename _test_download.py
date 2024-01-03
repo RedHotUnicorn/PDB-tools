@@ -22,7 +22,10 @@ df['gold_link']               = df                .apply(lambda x:u.base_link_to
 df['gold_hostname']           = df                .apply(lambda x:u.get_hostname(x.gold_link)                           , axis=1 , result_type='expand' )
 
 # print duplicates
-print(df[df.duplicated(['gold_link'])])
+dups                          = df[df.duplicated(['gold_link'])]
+
+u.logger.info('DUPLICATES')
+u.logger.info('\n'+ dups.to_markdown())
 
 # get only undup
 df                            = df                .drop_duplicates('gold_link')
@@ -42,7 +45,12 @@ df[['title','md']]            = df                .apply(lambda x: u.try_downloa
 
 df['md_hash']                 = df                .apply(lambda x: u.generate_hash(x.md)                                , axis=1 , result_type='expand' ) 
 df['gold_link_hash']          = df                .apply(lambda x: u.generate_hash(x.gold_link)                         , axis=1 , result_type='expand' ) 
-df['date']                    = df                .apply(lambda x: u.getdate()                                          , axis=1 , result_type='expand' ) 
+df['date']                    = df                .apply(lambda x: u.getdate()  
+                                                                                                 , axis=1 , result_type='expand' ) 
+
+u.logger.info('BEFORE DROP NA')
+u.logger.info('\n'+ df.drop(columns=['md','ct']).to_markdown())
+
 df                            = df.dropna()
 df['done']                    = df                .apply(lambda x: u.save_to_file(u.get_valid_filename(x.title.strip() +' ('+x.gold_link_hash+')')+'.md'
                                                                                   ,x.md
@@ -68,4 +76,4 @@ df['done']                    = df                .apply(lambda x: u.save_to_fil
                                                                                     ) 
                                                             , axis=1 )
 
-print(df)
+u.logger.info('\n'+ df.drop(columns=['md','ct']).to_markdown())
