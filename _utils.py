@@ -301,7 +301,7 @@ def base_link_to_gold_link(base_link):
     except Exception as e:
         print(gold_link ," ",base_link)
         print(e)
-        gold_link = ''
+        gold_link = base_link
 
     return gold_link
 
@@ -343,6 +343,9 @@ def fuzzy_search():
 ######################################################################
 """
 
+def replace_tags_in_content(str_w_tags):
+    return re.sub(r"(^|[\s\[])(\#[^\s#]+)", r"\1\\\2", str_w_tags)
+
 def download_article_title_and_content(url):
     # TODO in v1 code I had the IF 
     # if  "application" in r.headers['Content-Type'] or "image" in r.headers['Content-Type']:
@@ -377,7 +380,7 @@ def download_article_title_and_content(url):
             ,include_comments=True
         ).replace('```', "\n```\n")
 
-        sent = re.sub(r"([\s^])(\#[^\s#]+)", r"\1\\\2", sent)
+        
     except:
         sent = None
         title = None
@@ -470,6 +473,7 @@ def download_youtube_title_and_content(  url
 
 
         ydl_opts = {
+            'logger': logger,
             "subtitleslangs": langs,
             'writeautomaticsub': True,
             "writesub":  True ,
@@ -477,6 +481,7 @@ def download_youtube_title_and_content(  url
             'writedescription': True,
             'subtitlesformat': sub_ext,
             'skip_download': True,
+            'noplaylist': True,
             'paths' : dict(home = str(directory))  ,
             'outtmpl': file_tmpl
         }
@@ -490,7 +495,12 @@ def download_youtube_title_and_content(  url
             # https://stackoverflow.com/questions/63916090/extract-the-title-of-a-youtube-video-python
             su          = info_dict.get('requested_subtitles', None)
             if su == None:
-                download_youtube_audio(url,IN_FOLDER / 'audio')
+                yt_id   = info_dict.get('id', None)
+                audio_folder = IN_FOLDER / 'audio'
+                if len(list(audio_folder.glob(yt_id+'*'))) == 0:
+                    download_youtube_audio(url,IN_FOLDER / 'audio')
+                else:
+                    print(f'audio {yt_id} already exists')
             video_lang  = info_dict.get('language', None)
 
         # print(video_title)

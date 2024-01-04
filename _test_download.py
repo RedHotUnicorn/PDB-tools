@@ -6,6 +6,7 @@ u.logger.info('FILES IN VAULT')
 u.logger.info('\n'+ vault_df.to_markdown())
 
 # r'C:\MyFiles\Code\PDB-tools_v2\in\notion_15_test.csv'
+# r'C:\MyFiles\Code\PDB-tools_v2\in\notion.csv'
 df                            = u.pd.read_csv(r'C:\MyFiles\Code\PDB-tools_v2\in\notion.csv'
                                           , usecols = ['property_url','url','property_create_dt','property_done','property_create_dt']
                                           , parse_dates=['property_create_dt']
@@ -16,6 +17,13 @@ df['property_create_dt']      = df['property_create_dt'].dt.tz_localize(None)
 df['src_date']                = df['property_create_dt'].astype(str)
 
 df                            = df.dropna()
+
+if vault_df.size > 0: 
+    df                        = df[df.join(vault_df.set_index('src_link'), on='src_link',rsuffix='_vault')['f_Name'].isna()]
+
+u.logger.info('WHAT TO LOAD by src_link')
+u.logger.info('\n'+ df.to_markdown())
+
 df['done']                    = df                .apply(lambda x:0     if  x.property_done == False 
                                                                         or  x.property_done == "False" 
                                                                         or  x.property_done == "FALSE" 
@@ -28,7 +36,7 @@ df['gold_hostname']           = df                .apply(lambda x:u.get_hostname
 if vault_df.size > 0: 
     df                        = df[df.join(vault_df.set_index('gold_link'), on='gold_link',rsuffix='_vault')['f_Name'].isna()]
 u.logger.info(vault_df.size)
-u.logger.info('WHAT TO LOAD')
+u.logger.info('WHAT TO LOAD by gold_link')
 u.logger.info('\n'+ df.to_markdown())
 
 
@@ -49,11 +57,13 @@ df                            = df                .drop_duplicates('gold_link')
 
 df[['status_code','ct']]      = df                .apply(lambda x: u.first_try_url(x.gold_link)                         , axis=1 , result_type='expand' )
 
-df.to_excel(r'tmp/df_after_first_try_url.xlsx')
+
 # df                            = u.pd.read_excel(r'out/df_after_first_try_url.xlsx' )
 
 # df[['title','md']]            = df                .apply(lambda x: u.download_article_title_and_content(x.gold_link)    , axis=1 , result_type='expand' ) 
 df[['title','md']]            = df                .apply(lambda x: u.try_download(x.gold_link)            , axis=1 , result_type='expand' ) 
+
+# df['md']                      = df                .apply(lambda x: u.replace_tags_in_content(x.md)                    , axis=1 , result_type='expand' )
 
 df['md_hash']                 = df                .apply(lambda x: u.generate_hash(x.md)                                , axis=1 , result_type='expand' ) 
 df['gold_link_hash']          = df                .apply(lambda x: u.generate_hash(x.gold_link)                         , axis=1 , result_type='expand' ) 
