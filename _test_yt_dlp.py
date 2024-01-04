@@ -1,5 +1,5 @@
 import yt_dlp
-from _utils import TMP_FOLDER , IN_FOLDER, generate_hash , fix_youtube_vtt , tsv_to_md
+from _utils import TMP_FOLDER , IN_FOLDER, generate_hash , fix_youtube_vtt ,  logger , Error_Handler
 import os
 from    pathlib import Path
 
@@ -9,7 +9,42 @@ import pandas as pd
 url = "https://www.youtube.com/watch?v=Z8yL3zkudZU"
 url = 'https://www.youtube.com/watch?v=P1u3UZQmaRo' 
 url = 'https://www.youtube.com/watch?v=tNrlSai6JGA'
+url = 'https://www.youtube.com/watch?v=6oRp5UjZS28'
 
+
+@Error_Handler
+def tsv_to_md(file_path , url) :
+    # TODO what if url whil contain &t= as parameter? 
+    ret = ''
+
+
+    tsv                 = pd                .read_table(Path(file_path),encoding='utf8')
+    tsv                 .dropna(inplace=True)
+    tsv['text_len']     = tsv['text']       .apply(lambda x :len(str(x)))
+    tsv['start_sec']    = tsv['start']      .apply(lambda x :x/1000)
+
+    groups = []
+    group = 0
+    cumsum = 0
+    for n in tsv["text_len"]:
+        if cumsum >= 1000:
+            cumsum = 0
+            group = group + 1
+        cumsum = cumsum + n
+        groups.append(group)
+
+    # print(groups)
+
+    new                  =  ( tsv           .groupby(groups)
+                                            .agg({  'text'      :' '.join
+                                                  , 'start_sec' : lambda x: x.min().round().astype(int)})
+                            )
+    for index, row in new.iterrows():
+        ret += f' - ~~[▶]({url}&t={row["start_sec"]})~~  {row["text"]} \n'
+    
+
+
+    return ret
 
 def download_youtube_audio(url,folder_of_files):
     video_path_local_list = []
@@ -46,6 +81,7 @@ def download_youtube_title_and_content(  url
                                         ,langs              = ["en","ru"]
                                       ):
 
+
     directory       = TMP_FOLDER / 'download_youtube_title_and_content'
     hash_word       = generate_hash(url)
     files           = list(directory.glob(hash_word+'*'))
@@ -63,6 +99,7 @@ def download_youtube_title_and_content(  url
 
 
     ydl_opts = {
+        # 'logger': logger,
         "subtitleslangs": langs,
         'writeautomaticsub': True,
         "writesub":  True ,
@@ -70,6 +107,7 @@ def download_youtube_title_and_content(  url
         'writedescription': True,
         'subtitlesformat': sub_ext,
         'skip_download': True,
+        'noplaylist': True,
         'paths' : dict(home = str(directory))  ,
         'outtmpl': file_tmpl
     }
@@ -83,7 +121,12 @@ def download_youtube_title_and_content(  url
         # https://stackoverflow.com/questions/63916090/extract-the-title-of-a-youtube-video-python
         su          = info_dict.get('requested_subtitles', None)
         if su == None:
-            download_youtube_audio(url,IN_FOLDER / 'audio')
+            yt_id   = info_dict.get('id', None)
+            audio_folder = IN_FOLDER / 'audio'
+            if len(list(audio_folder.glob(yt_id+'*'))) == 0:
+                download_youtube_audio(url,IN_FOLDER / 'audio')
+            else:
+                print(f'audio {yt_id} already exists')
         video_lang  = info_dict.get('language', None)
 
     # print(video_title)
@@ -100,13 +143,15 @@ def download_youtube_title_and_content(  url
         sent += f.read()
         sent +='\n'
 
+    print(files)
+
     for f in files:
         if (directory / f['_in']).is_file():
             with (directory / f['_out']).open('w',encoding='utf8') as fl:
                 fl.write('start\tend\ttext\n')
                 fl.write(fix_youtube_vtt( str(directory / f['_in']) )  )
-                sent+='# '+ f['_lang'] + '\n'
-                sent += tsv_to_md(str(directory / f['_out'])  ,url )
+            sent+='# '+ f['_lang'] + '\n'
+            sent += tsv_to_md(directory / f['_out']  ,url )
 
             
 
@@ -114,18 +159,26 @@ def download_youtube_title_and_content(  url
     #      fl.write(sent)
 
 
-    files           = directory.glob(hash_word+'*')
-    for f in files:
-        f.unlink()
-    
+    # files           = directory.glob(hash_word+'*')
+    # for f in files:
+    #     f.unlink()
+
+
 
     return [video_title , sent]
-# print(download_youtube_title_and_content("https://www.youtube.com/watch?v=3tkI3k14P4w"))
-# download_youtube_title_and_content("https://www.youtube.com/watch?v=Z8yL3zkudZU")
-print(download_youtube_title_and_content("https://www.youtube.com/watch?v=zW1jpm7tJuA"))
 
 
-# tsv          = pd                .read_csv(r'c:\MyFiles\Code\PDB-tools_v2\tmp\download_youtube_title_and_content\eb51deb503d85352b9a00a9c2170d28e.en.tsv', sep='\t')
-# tsv.dropna(inplace=True)
-# tsv['text_len']     = tsv['text']       .apply(lambda x :len(str(x)))
-# print(tsv.query('text_len < 10'))
+
+# seneet= tsv_to_md('c:/MyFiles/Code/PDB-tools_v2/tmp/download_youtube_title_and_content/800510f9bc375278aacc9602757bac75.en.tsv'  ,url )
+
+# print(type(seneet))
+# print(seneet)
+
+
+
+print(download_youtube_title_and_content(url))
+
+
+# with Path(r'C:\MyFiles\Code\PDB-tools_v2\tmp\download_youtube_title_and_content\800510f9bc375278aacc9602757bac75.en.tsv').open('w',encoding='utf8') as fl:
+#                     fl.write('start\tend\ttext\n')
+#                     fl.write(fix_youtube_vtt( r'C:\MyFiles\Code\PDB-tools_v2\tmp\download_youtube_title_and_content\800510f9bc375278aacc9602757bac75.en.vtt' ))

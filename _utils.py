@@ -22,6 +22,7 @@ from    yaml import CSafeDumper as SafeDumper
 import  yt_dlp
 
 
+
 def get_valid_filename(str):
     return "".join( x for x in str if (x.isalnum() or x in "._- "))
 
@@ -42,6 +43,17 @@ logging         .basicConfig(filename=LOG_FOLDER / get_valid_filename(str(str(da
 logger          = logging.getLogger('PDB-tools')
 logger          .setLevel(logging.DEBUG)
 
+def Error_Handler(func):
+    def Inner_Function(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e :
+            logger      .error(f"{func.__name__}: args:   {args}")
+            logger      .error(f"{func.__name__}: kwargs: {kwargs}")
+            logger      .error(e, exc_info=True)
+            print(e)
+            return func(*args , return_default_value = True , **kwargs)
+    return Inner_Function
 
 if not PROJECT_FOLDER.exists():
     logger      .error("Folder PROJECT is not exitst:")
@@ -250,8 +262,8 @@ def link_expand(link):
     
     """
 
-
-def base_link_to_gold_link(base_link):
+@Error_Handler
+def base_link_to_gold_link(base_link , return_default_value = False):
     """
     1. Standartize the curent url
     2. Parse the hostname and query
@@ -260,48 +272,45 @@ def base_link_to_gold_link(base_link):
 
     version right now not used but should be , probably
     """
+    if return_default_value : return base_link
+
     version         = '2023-10-29'
     gold_link       = base_link
 
-    try:
-        gold_link       = gold_link.replace("&amp;", "&")
+    gold_link       = gold_link.replace("&amp;", "&")
 
-        o               = urllib.parse.urlsplit(gold_link)
-        gold_link       = o._replace(  scheme=o.scheme if o.scheme else "https"                 
-                                     , netloc=o.netloc if o.netloc else o.path
-                                     , path  ="" if o.path and not o.netloc and not o.scheme  else o.path
-                                    ).geturl()                                          # https://stackoverflow.com/a/61859560/5353177
+    o               = urllib.parse.urlsplit(gold_link)
+    gold_link       = o._replace(  scheme=o.scheme if o.scheme else "https"                 
+                                    , netloc=o.netloc if o.netloc else o.path
+                                    , path  ="" if o.path and not o.netloc and not o.scheme  else o.path
+                                ).geturl()                                          # https://stackoverflow.com/a/61859560/5353177
 
 
-        gold_link       =  link_expand(gold_link)                                       # try_expand      = urlexpander.expand(base_link , use_head=False)                # gold_link = url_normalize(urlexpander.expand(base_link)) 
-                                                                                        # if      (   "__CLIENT_ERROR__".lower()          not in try_expand.lower() ) \
-                                                                                        #     and (   "__connectionpool_error__".lower()  not in try_expand.lower() ):    # __CLIENT_ERROR__: https://github.com/SMAPPNYU/urlExpander/issues http://t.me\__connectionpool_error__/
-                                                                                        #     gold_link   = try_expand                          
+    gold_link       =  link_expand(gold_link)                                       # try_expand      = urlexpander.expand(base_link , use_head=False)                # gold_link = url_normalize(urlexpander.expand(base_link)) 
+                                                                                    # if      (   "__CLIENT_ERROR__".lower()          not in try_expand.lower() ) \
+                                                                                    #     and (   "__connectionpool_error__".lower()  not in try_expand.lower() ):    # __CLIENT_ERROR__: https://github.com/SMAPPNYU/urlExpander/issues http://t.me\__connectionpool_error__/
+                                                                                    #     gold_link   = try_expand                          
 
-        o               = urllib.parse.urlsplit(gold_link)
-        o_query         = dict(urllib.parse.parse_qsl(o.query))                         # https://gist.github.com/rokcarl/20b5bf8dd9b1998880b7
-        for key in REMOVE_PARAMS_ARRAY:
-            o_query.pop(key, None)     
-                                                             # https://stackoverflow.com/a/70785605/5353177
+    o               = urllib.parse.urlsplit(gold_link)
+    o_query         = dict(urllib.parse.parse_qsl(o.query))                         # https://gist.github.com/rokcarl/20b5bf8dd9b1998880b7
+    for key in REMOVE_PARAMS_ARRAY:
+        o_query.pop(key, None)     
+                                                            # https://stackoverflow.com/a/70785605/5353177
 
-        gold_link = o._replace(query=urllib.parse.urlencode(o_query)
-                               ,scheme=o.scheme if o.scheme == '' else "https"
-                               ).geturl()
+    gold_link = o._replace(query=urllib.parse.urlencode(o_query)
+                            ,scheme=o.scheme if o.scheme == '' else "https"
+                            ).geturl()
 
-        o_hostname          = o.hostname
-        # if gold_link.scheme == '':
-        #      gold_link.scheme == 'https'
-        if o_hostname in STRICT_PARAMS_DICT:
-            params          = STRICT_PARAMS_DICT[o_hostname]
-            gold_link       = w3lib.url.url_query_cleaner(gold_link,params)
-        if o_hostname in ADD_PARAMS_DICT:
-            params_to_add   = ADD_PARAMS_DICT[o_hostname]
-            gold_link       = w3lib.url.add_or_replace_parameters(gold_link,params_to_add)
+    o_hostname          = o.hostname
+    # if gold_link.scheme == '':
+    #      gold_link.scheme == 'https'
+    if o_hostname in STRICT_PARAMS_DICT:
+        params          = STRICT_PARAMS_DICT[o_hostname]
+        gold_link       = w3lib.url.url_query_cleaner(gold_link,params)
+    if o_hostname in ADD_PARAMS_DICT:
+        params_to_add   = ADD_PARAMS_DICT[o_hostname]
+        gold_link       = w3lib.url.add_or_replace_parameters(gold_link,params_to_add)
         
-    except Exception as e:
-        print(gold_link ," ",base_link)
-        print(e)
-        gold_link = base_link
 
     return gold_link
 
@@ -388,7 +397,10 @@ def download_article_title_and_content(url):
 
     return [ title , sent ]
 
-def tsv_to_md(file_path , url) -> str:
+@Error_Handler
+def tsv_to_md(file_path , url, return_default_value = False) -> str:
+    if return_default_value : return ''
+
     # TODO what if url whil contain &t= as parameter? 
     ret = ''
        
@@ -448,114 +460,110 @@ def download_youtube_audio(url,folder_of_files):
 
 
 
-
+@Error_Handler
 def download_youtube_title_and_content(  url
                                         ,sub_ext            = 'vtt'
                                         ,sub_table_ext      = 'tsv'
                                         ,langs              = ["en","ru"]
+                                        ,return_default_value = False
                                       ):
-
-    try:
-        directory       = TMP_FOLDER / 'download_youtube_title_and_content'
-        hash_word       = generate_hash(url)
-        files           = list(directory.glob(hash_word+'*'))
+    if return_default_value : return [None , None]
 
 
-
-        file_tmpl = hash_word
-        # langs = ["en","ru"]
-
-        files = []
-        for l in langs:
-            files.append(dict(    _in  = file_tmpl + '.'+ l + '.' + sub_ext 
-                                ,_out  = file_tmpl + '.'+ l + '.' + sub_table_ext 
-                                ,_lang = l   ))
+    directory       = TMP_FOLDER / 'download_youtube_title_and_content'
+    hash_word       = generate_hash(url)
+    files           = list(directory.glob(hash_word+'*'))
 
 
-        ydl_opts = {
-            'logger': logger,
-            "subtitleslangs": langs,
-            'writeautomaticsub': True,
-            "writesub":  True ,
-            "embedsubs": True,
-            'writedescription': True,
-            'subtitlesformat': sub_ext,
-            'skip_download': True,
-            'noplaylist': True,
-            'paths' : dict(home = str(directory))  ,
-            'outtmpl': file_tmpl
-        }
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download(url)
-            info_dict = ydl.extract_info(url, download=False)
-            
-            video_title = info_dict.get('title', None)
-            # TODO maybe we can avoid extracting to the file by _write_subtitles(self, info_dict, filename) 
-            # and write subs to variable...
-            # https://stackoverflow.com/questions/63916090/extract-the-title-of-a-youtube-video-python
-            su          = info_dict.get('requested_subtitles', None)
-            if su == None:
-                yt_id   = info_dict.get('id', None)
-                audio_folder = IN_FOLDER / 'audio'
-                if len(list(audio_folder.glob(yt_id+'*'))) == 0:
-                    download_youtube_audio(url,IN_FOLDER / 'audio')
-                else:
-                    print(f'audio {yt_id} already exists')
-            video_lang  = info_dict.get('language', None)
 
-        # print(video_title)
-        # print(su)
+    file_tmpl = hash_word
+    # langs = ["en","ru"]
+
+    files = []
+    for l in langs:
+        files.append(dict(    _in  = file_tmpl + '.'+ l + '.' + sub_ext 
+                            ,_out  = file_tmpl + '.'+ l + '.' + sub_table_ext 
+                            ,_lang = l   ))
+
+
+    ydl_opts = {
+        'logger': logger,
+        'match_filter': yt_dlp.utils.match_filter_func(['!playlist']) , 
+        "subtitleslangs": langs,
+        'writeautomaticsub': True,
+        "writesub":  True ,
+        "embedsubs": True,
+        'writedescription': True,
+        'subtitlesformat': sub_ext,
+        'skip_download': True,
+        'noplaylist': True,
+        'paths' : dict(home = str(directory))  ,
+        'outtmpl': file_tmpl
+    }
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        ydl.download(url)
+        info_dict = ydl.extract_info(url, download=False)
         
-        # sort by prefered lang
-        files =  sorted(files, key=lambda x: (x['_lang'] == video_lang),reverse=True)
-        # print(files)
+        video_title = info_dict.get('title', None)
+        # TODO maybe we can avoid extracting to the file by _write_subtitles(self, info_dict, filename) 
+        # and write subs to variable...
+        # https://stackoverflow.com/questions/63916090/extract-the-title-of-a-youtube-video-python
+        su          = info_dict.get('requested_subtitles', None)
+        if su == None:
+            yt_id   = info_dict.get('id', None)
+            audio_folder = IN_FOLDER / 'audio'
+            if len(list(audio_folder.glob(yt_id+'*'))) == 0:
+                download_youtube_audio(url,IN_FOLDER / 'audio')
+            else:
+                print(f'audio {yt_id} already exists')
+        video_lang  = info_dict.get('language', None)
+
+    # print(video_title)
+    # print(su)
+    
+    # sort by prefered lang
+    files =  sorted(files, key=lambda x: (x['_lang'] == video_lang),reverse=True)
+    # print(files)
+        
+    sent =''
+    print()
+    with open(list(directory.glob(hash_word+'*.description'))[0],'r',encoding='utf8') as f:
+        sent +='# Description \n'
+        sent += f.read()
+        sent +='\n'
+
+    for f in files:
+        if (directory / f['_in']).is_file():
+            with (directory / f['_out']).open('w',encoding='utf8') as fl:
+                fl.write('start\tend\ttext\n')
+                fl.write(fix_youtube_vtt( str(directory / f['_in']) )  )
+            sent+='# '+ f['_lang'] + '\n'
+            sent += tsv_to_md(str(directory / f['_out'])  ,url )
+
             
-        sent =''
-        print()
-        with open(list(directory.glob(hash_word+'*.description'))[0],'r',encoding='utf8') as f:
-            sent +='# Description \n'
-            sent += f.read()
-            sent +='\n'
 
-        for f in files:
-            if (directory / f['_in']).is_file():
-                with (directory / f['_out']).open('w',encoding='utf8') as fl:
-                    fl.write('start\tend\ttext\n')
-                    fl.write(fix_youtube_vtt( str(directory / f['_in']) )  )
-                    sent+='# '+ f['_lang'] + '\n'
-                    sent += tsv_to_md(str(directory / f['_out'])  ,url )
-
-                
-
-        # with open(folder_of_files + get_valid_filename(video_title)+'.md','w',encoding='utf8') as fl:
-        #      fl.write(sent)
+    # with open(folder_of_files + get_valid_filename(video_title)+'.md','w',encoding='utf8') as fl:
+    #      fl.write(sent)
 
 
-        files           = directory.glob(hash_word+'*')
-        for f in files:
-            f.unlink()
-    except:
-        video_title = None
-        sent = None
-        logger      .warning(f"download_youtube_title_and_content: Something wrong with URL: {url}")
+    files           = directory.glob(hash_word+'*')
+    for f in files:
+        f.unlink()
     
 
     return [video_title , sent]
 
-def try_download(link):
-    print(link)
+@Error_Handler
+def try_download(link , return_default_value = False):
+    if return_default_value : return [None,None]
     array = [None,None]
-    try:
-        match get_hostname(link):
-            case "youtube.com" | 'youtu.be' | "www.youtube.com":
-                array = download_youtube_title_and_content(link)    
-            case _:
-                array = download_article_title_and_content(link)
-    except Exception as e:
-        print('-'*20 + 'ERROR' + '-'*75)
-        print(link)
 
-        print('-'*100)
+    match get_hostname(link):
+        case "youtube.com" | 'youtu.be' | "www.youtube.com":
+            array = download_youtube_title_and_content(link)    
+        case _:
+            array = download_article_title_and_content(link)
+
 
     
     return array
