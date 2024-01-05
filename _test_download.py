@@ -80,7 +80,7 @@ u.logger.info('WHAT TO SAVE')
 u.logger.info('\n'+ df.drop(columns=['md','ct']).to_markdown())
 
 if df.size > 0: 
-    df['done']                = df                .apply(lambda x: u.save_to_file(u.get_valid_filename(x.title.strip() +' ('+x.gold_link_hash+')')+'.md'
+    df['done']                = df                .apply(lambda x: u.save_to_file(u.get_valid_filename(x.title.strip()[:200] +' ('+x.gold_link_hash+')')+'.md'
                                                                                   ,x.md
                                                                                   ,dict( aliases            = [] + list(set([x.gold_link, x.base_link]))
                                                                                         ,date               = x.date

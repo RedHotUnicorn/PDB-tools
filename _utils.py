@@ -382,7 +382,7 @@ def download_article_title_and_content(url):
                 # .replace("<li>", "<li>\n")
             )
             #, output_format='xml'
-            # ,include_images=True
+            ,include_images=True
             ,include_formatting=True
             , include_links=True
             # ,favor_precision=True
@@ -568,7 +568,9 @@ def try_download(link , return_default_value = False):
     
     return array
 
-def save_to_file(file_name,cnt_str='',mt_dict=None,folder_path=DWN_VAULT_PATH):
+@Error_Handler
+def save_to_file(file_name,cnt_str='',mt_dict=None,folder_path=DWN_VAULT_PATH , return_default_value = False):
+    if return_default_value : return False
     ret          = frontmatter.Post(content='')
     ret.content  = cnt_str
     ret.metadata = mt_dict
@@ -576,14 +578,14 @@ def save_to_file(file_name,cnt_str='',mt_dict=None,folder_path=DWN_VAULT_PATH):
     # print(ret.metadata)
 
     bool = True
-    try:
 
-        with open(os.path.join(folder_path,file_name), "w", encoding="utf-8") as f:
-            f.write(frontmatter.dumps(ret , sort_keys=False))
-            # https://github.com/eyeseast/python-frontmatter/issues/26#issuecomment-799024484
-    except:
-        bool = False
-        # TODO warning
+    folder = Path(folder_path)
+    file   = folder / file_name
+
+    with file.open( "w", encoding="utf-8") as f:
+        f.write(frontmatter.dumps(ret , sort_keys=False))
+        # https://github.com/eyeseast/python-frontmatter/issues/26#issuecomment-799024484
+
     return bool
 
 

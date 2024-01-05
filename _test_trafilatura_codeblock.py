@@ -47,7 +47,7 @@ def download_article_title_and_content(url):
                 # .replace("<li>", "<li>\n")
             )
             #, output_format='xml'
-            # ,include_images=True
+            ,include_images=True
             ,include_formatting=True
             , include_links=True
             # ,favor_precision=True
