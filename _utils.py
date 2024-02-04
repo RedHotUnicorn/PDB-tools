@@ -76,98 +76,16 @@ if not LOG_FOLDER.exists():
 
 
 # VAULT_PATH      = r"C:\MyFiles\PKM\PDB"
-VAULT_PATH      = config['in']['VAULT_PATH']
-OUT_TEXT_FOLDER  = config['out']['OUT_TEXT_FOLDER']
 IN_CSV          = IN_FOLDER / config['in']['CSV_FILE_NAME']
+VAULT_PATH      = config['in']['VAULT_PATH']
+OUT_TEXT_FOLDER = config['out']['OUT_TEXT_FOLDER']
+OUT_AUDIO_FOLDER= config['out']['OUT_AUDIO_FOLDER']
 
 
 
-URL_REGEXP          = r"https?\:\/\/[a-zA-Z0-9\.\/\?\:@\-_=#]+\.(?:[a-zA-Z]){2,6}(?:[a-zA-Z0-9\.\&\/\?\:@\-_=#])*"
-URL_PROP_REGEXP     = r"url::.*"
-# URL_STRIKE_REGEXP   = r"~~\s*" + URL_REGEXP + r"\s*~~"
-URL_STRIKE_REGEXP   = r"\~\~\s*\[.*\]\(https?\:\/\/[a-zA-Z0-9\.\/\?\:@\-_=#]+\.(?:[a-zA-Z]){2,6}(?:[a-zA-Z0-9\.\&\/\?\:@\-_=#])*\)\s*\~\~"
-URL_STRIKE_REGEXP   = r"\~\~\s*\[.*\]\("+ URL_REGEXP +r"\)\s*\~\~"
 
 
 
-def get_Meta_Property_from_MD(path,file,prop):
-    ret     = None
-
-    f       = open(   os.path.join(path, file), 'r', encoding="utf-8")
-    md      = markdown.Markdown(extensions=['full_yaml_metadata'])
-    md.convert(f.read())
-    
-    if md.Meta !="" and md.Meta!= None:
-        if prop in md.Meta and md.Meta[prop] != None:
-            m_p = md.Meta[prop]
-            if isinstance(m_p, str):
-                m_p = [m_p]
-            ret = list(filter(lambda x: x is not None, m_p))
-    
-    return ret
-
-
-
-def get_URLs_from_file(path,file):
-    """
-    to test 
-    a = get_URLs_from_file(r'C:\MyFiles\PKM\PDB\1 - 📝  Reference Base','🎥 GTD A guide to Getting Things Done OneStutteringMind.md')
-    a = get_URLs_from_file(r'C:\MyFiles\PKM\PDB\0 - 📥  Inbox','🖼️ Writing is thinking.canvas')
-
-    so first we need to find MAIN url of md or canvas
-    if we found to we can remove all duplicates in this text
-    
-    after that we could find all other urls
-    """
-
-    text                = open(   os.path.join(path, file), 'r', encoding="utf-8").read()
-    extractor           = URLExtract()
-
-    res_url             = {}
-    res_url["prop"]     = []  
-    res_url["done"]     = [] 
-    res_url["located"]  = []  
-
-    prop_url_find       = re.findall(URL_PROP_REGEXP,text)
-    if prop_url_find:
-        prop_url_search = extractor.find_urls( prop_url_find[0])
-        if prop_url_search:
-            res_url["prop"].append(prop_url_search[0])
-
-    strike_url_find     = re.findall(URL_STRIKE_REGEXP,text)
-    if strike_url_find:
-        strike_ur_search = extractor.find_urls( str(strike_url_find))
-        if strike_ur_search:
-            res_url["done"].extend(strike_ur_search)
-
-    # https://gist.github.com/bgusach/a967e0587d6e01e889fd1d776c5f3729
-    # https://stackoverflow.com/a/55889140/5353177
-    [text := text.replace(x, '') for x in prop_url_find]
-    [text := text.replace(x, '') for x in strike_url_find]
-
-    additional_urls     = extractor.find_urls( text )
-    additional_urls     = [k for k in additional_urls if k.startswith('http')]
-    additional_urls     = [k for k in additional_urls if not k.startswith('https://todoist.com/showTask')]
-
-    res_url["located"]  = additional_urls
-
-    # return prop_url , additional_urls
-    return res_url
-
-
-
-def extract_stop_words():
-    storeFolder = os.path.join(os.path.dirname(__file__) , "additional files")
-
-    russian_stopwords = stopwords.words("russian")
-    f = open(storeFolder + "russian_stopwords.txt", "w", encoding="utf-8")
-    f.write('\n'.join(map(str, russian_stopwords)))
-    f.close()
-
-    english_stopwords = stopwords.words("english")
-    f = open(storeFolder + "renglish_stopwords.txt", "w", encoding="utf-8")
-    f.write('\n'.join(map(str, english_stopwords)))
-    f.close()
 
 
     
@@ -286,31 +204,6 @@ def get_hostname(link):
 
 
 
-def fuzzy_search():
-    text1 = 'test test test test remove'
-    text2 = 'append test test test test append '
-    print(SequenceMatcher(None, text1, text2).ratio())
-    print(SequenceMatcher(None, text2, text1).ratio())
-    # text1 = 'https://m.youtube.com/playlist?list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL'
-    # text2 = 'https://www.youtube.com/playlist?app=desktop&list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL'
-    # print(SequenceMatcher(None, text1, text2).ratio())
-
-    # text1 = 'https://www.youtube.com/playlist?app=desktop&list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL'
-    # text2 = 'https://consent.youtube.com/ml?continue=https://www.youtube.com/playlist?app%3Ddesktop%26list%3DPL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL%26cbrd%3D1&gl=DE&hl=de&cm=2&pc=yt&src=1'
-    # print(SequenceMatcher(None, text1, text2).ratio())
-
-    # text1 = 'https://sql-optimizer.streamlit.app/'
-    # text2 = 'https://share.streamlit.io/-/auth/app?redirect_uri=https%3A%2F%2Fsql-optimizer.streamlit.app%2F'
-    # print(SequenceMatcher(None, text1, text2).ratio())
-
-    # text1 = 'https://share.streamlit.io/-/auth/app?redirect_uri=https%3A%2F%2Fsql-optimizer.streamlit.app%2F'
-    # text2 = 'https://sql-optimizer.streamlit.app/-/login?payload=MTcwMjMyNTkxM3xkYzMycUFQUC16V3p6ZmZENEJWTnp6VVR5S1RrTTliZ0ZVS2tvUEhzUVRUMG1TSlhqWnN6OU1qdmFENDBpWUJ6ZWxHTURjUFFwVnJQaUZMcFlqRnNmSDhiZmpWd09aYks5MjBPVks3cGtIbjR2U21TMWtzTXI5dDZ6NS1saElEcm9zY0pkX3hBN2NoVGJZMUdFd1dRX1pmX2VwbE1qQlJaOTA1enJ0R1hMQ3VHUE9JOTUwWi1veTFLNGdYeHlSWF9yazVpLTBBTk9BYTZxTW9GU0lNMjVqYkRPT0FtZk1HNzlHYUQ1czZ0N3ZKT1pUaFdVaXl0MDRpcU84ajh6QzlPOG0wVWY4T1QwSklTVmg4WE04M0N3bFJEdXhBMmdocnYxclhlb2xCRUhFc2x3bVNJZ2h2ZGRfb3VIN0V2WU1zZjUyUU91N3o4dWplbVEwakNXYi00VlpKdFdHLWczQnBhUjBXcUxlSmlQdjh5Q0taQ3d3ZlRNeHRNZzFkS0lWNFpsWUZQTXFkVGF4eFBqRFl3VDBJQUVZbTc1S3F6QXN0SS1TRm02c2t0RzNtNE9FeE1vMVVPVXJudmdrZDZzVnNueXd5dXRGemJsYWN5SFNXN2xub0hkdnRvd0hZbGtzRjk2SzBVOXhXRUNpaGcyRWMzZzdOc1VlRk9LT044SDdSSG9JdlpsMFFGeUUzeTlpRFVXTFF2U0t2OXx6xAddRJr5D34xPszvGcHOu7Dy_64N-h9R04W_vff92Q%3D%3D'
-    # print(SequenceMatcher(None, text1, text2).ratio())
-
-
-    # text1 = 'https://www.linkedin.com/posts/aurelienvautier_businessintelligence-dataanalytics-dashboard-activity-7097459717383311360-db1X'
-    # text2 = 'https://www.linkedin.com/signup/cold-join?session_redirect=https%3A%2F%2Fwww.linkedin.com%2Ffeed%2Fupdate%2Furn%3Ali%3Aactivity%3A7097459717383311360'
-    # print(SequenceMatcher(None, text1, text2).ratio())
 
 
 """
@@ -738,3 +631,129 @@ def fix_youtube_vtt(vtt_file_path) -> str:
             pretty_subtitle += f"{int(1000 * caption.start_in_seconds)}\t{int(1000 * caption.end_in_seconds)}\t{caption.text.strip().replace(nl,'')}\n"
 
     return pretty_subtitle
+
+
+
+
+
+
+
+"""
+####################################################################### 
+#                          PROBABLY OUTDATED
+#######################################################################
+"""
+
+URL_REGEXP          = r"https?\:\/\/[a-zA-Z0-9\.\/\?\:@\-_=#]+\.(?:[a-zA-Z]){2,6}(?:[a-zA-Z0-9\.\&\/\?\:@\-_=#])*"
+URL_PROP_REGEXP     = r"url::.*"
+# URL_STRIKE_REGEXP   = r"~~\s*" + URL_REGEXP + r"\s*~~"
+URL_STRIKE_REGEXP   = r"\~\~\s*\[.*\]\(https?\:\/\/[a-zA-Z0-9\.\/\?\:@\-_=#]+\.(?:[a-zA-Z]){2,6}(?:[a-zA-Z0-9\.\&\/\?\:@\-_=#])*\)\s*\~\~"
+URL_STRIKE_REGEXP   = r"\~\~\s*\[.*\]\("+ URL_REGEXP +r"\)\s*\~\~"
+
+
+
+
+def get_Meta_Property_from_MD(path,file,prop):
+    ret     = None
+
+    f       = open(   os.path.join(path, file), 'r', encoding="utf-8")
+    md      = markdown.Markdown(extensions=['full_yaml_metadata'])
+    md.convert(f.read())
+    
+    if md.Meta !="" and md.Meta!= None:
+        if prop in md.Meta and md.Meta[prop] != None:
+            m_p = md.Meta[prop]
+            if isinstance(m_p, str):
+                m_p = [m_p]
+            ret = list(filter(lambda x: x is not None, m_p))
+    
+    return ret
+
+
+
+def get_URLs_from_file(path,file):
+    """
+    to test 
+    a = get_URLs_from_file(r'C:\MyFiles\PKM\PDB\1 - 📝  Reference Base','🎥 GTD A guide to Getting Things Done OneStutteringMind.md')
+    a = get_URLs_from_file(r'C:\MyFiles\PKM\PDB\0 - 📥  Inbox','🖼️ Writing is thinking.canvas')
+
+    so first we need to find MAIN url of md or canvas
+    if we found to we can remove all duplicates in this text
+    
+    after that we could find all other urls
+    """
+
+    text                = open(   os.path.join(path, file), 'r', encoding="utf-8").read()
+    extractor           = URLExtract()
+
+    res_url             = {}
+    res_url["prop"]     = []  
+    res_url["done"]     = [] 
+    res_url["located"]  = []  
+
+    prop_url_find       = re.findall(URL_PROP_REGEXP,text)
+    if prop_url_find:
+        prop_url_search = extractor.find_urls( prop_url_find[0])
+        if prop_url_search:
+            res_url["prop"].append(prop_url_search[0])
+
+    strike_url_find     = re.findall(URL_STRIKE_REGEXP,text)
+    if strike_url_find:
+        strike_ur_search = extractor.find_urls( str(strike_url_find))
+        if strike_ur_search:
+            res_url["done"].extend(strike_ur_search)
+
+    # https://gist.github.com/bgusach/a967e0587d6e01e889fd1d776c5f3729
+    # https://stackoverflow.com/a/55889140/5353177
+    [text := text.replace(x, '') for x in prop_url_find]
+    [text := text.replace(x, '') for x in strike_url_find]
+
+    additional_urls     = extractor.find_urls( text )
+    additional_urls     = [k for k in additional_urls if k.startswith('http')]
+    additional_urls     = [k for k in additional_urls if not k.startswith('https://todoist.com/showTask')]
+
+    res_url["located"]  = additional_urls
+
+    # return prop_url , additional_urls
+    return res_url
+
+
+def fuzzy_search():
+    text1 = 'test test test test remove'
+    text2 = 'append test test test test append '
+    print(SequenceMatcher(None, text1, text2).ratio())
+    print(SequenceMatcher(None, text2, text1).ratio())
+    # text1 = 'https://m.youtube.com/playlist?list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL'
+    # text2 = 'https://www.youtube.com/playlist?app=desktop&list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL'
+    # print(SequenceMatcher(None, text1, text2).ratio())
+
+    # text1 = 'https://www.youtube.com/playlist?app=desktop&list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL'
+    # text2 = 'https://consent.youtube.com/ml?continue=https://www.youtube.com/playlist?app%3Ddesktop%26list%3DPL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL%26cbrd%3D1&gl=DE&hl=de&cm=2&pc=yt&src=1'
+    # print(SequenceMatcher(None, text1, text2).ratio())
+
+    # text1 = 'https://sql-optimizer.streamlit.app/'
+    # text2 = 'https://share.streamlit.io/-/auth/app?redirect_uri=https%3A%2F%2Fsql-optimizer.streamlit.app%2F'
+    # print(SequenceMatcher(None, text1, text2).ratio())
+
+    # text1 = 'https://share.streamlit.io/-/auth/app?redirect_uri=https%3A%2F%2Fsql-optimizer.streamlit.app%2F'
+    # text2 = 'https://sql-optimizer.streamlit.app/-/login?payload=MTcwMjMyNTkxM3xkYzMycUFQUC16V3p6ZmZENEJWTnp6VVR5S1RrTTliZ0ZVS2tvUEhzUVRUMG1TSlhqWnN6OU1qdmFENDBpWUJ6ZWxHTURjUFFwVnJQaUZMcFlqRnNmSDhiZmpWd09aYks5MjBPVks3cGtIbjR2U21TMWtzTXI5dDZ6NS1saElEcm9zY0pkX3hBN2NoVGJZMUdFd1dRX1pmX2VwbE1qQlJaOTA1enJ0R1hMQ3VHUE9JOTUwWi1veTFLNGdYeHlSWF9yazVpLTBBTk9BYTZxTW9GU0lNMjVqYkRPT0FtZk1HNzlHYUQ1czZ0N3ZKT1pUaFdVaXl0MDRpcU84ajh6QzlPOG0wVWY4T1QwSklTVmg4WE04M0N3bFJEdXhBMmdocnYxclhlb2xCRUhFc2x3bVNJZ2h2ZGRfb3VIN0V2WU1zZjUyUU91N3o4dWplbVEwakNXYi00VlpKdFdHLWczQnBhUjBXcUxlSmlQdjh5Q0taQ3d3ZlRNeHRNZzFkS0lWNFpsWUZQTXFkVGF4eFBqRFl3VDBJQUVZbTc1S3F6QXN0SS1TRm02c2t0RzNtNE9FeE1vMVVPVXJudmdrZDZzVnNueXd5dXRGemJsYWN5SFNXN2xub0hkdnRvd0hZbGtzRjk2SzBVOXhXRUNpaGcyRWMzZzdOc1VlRk9LT044SDdSSG9JdlpsMFFGeUUzeTlpRFVXTFF2U0t2OXx6xAddRJr5D34xPszvGcHOu7Dy_64N-h9R04W_vff92Q%3D%3D'
+    # print(SequenceMatcher(None, text1, text2).ratio())
+
+
+    # text1 = 'https://www.linkedin.com/posts/aurelienvautier_businessintelligence-dataanalytics-dashboard-activity-7097459717383311360-db1X'
+    # text2 = 'https://www.linkedin.com/signup/cold-join?session_redirect=https%3A%2F%2Fwww.linkedin.com%2Ffeed%2Fupdate%2Furn%3Ali%3Aactivity%3A7097459717383311360'
+    # print(SequenceMatcher(None, text1, text2).ratio())
+
+
+def extract_stop_words():
+    storeFolder = os.path.join(os.path.dirname(__file__) , "additional files")
+
+    russian_stopwords = stopwords.words("russian")
+    f = open(storeFolder + "russian_stopwords.txt", "w", encoding="utf-8")
+    f.write('\n'.join(map(str, russian_stopwords)))
+    f.close()
+
+    english_stopwords = stopwords.words("english")
+    f = open(storeFolder + "renglish_stopwords.txt", "w", encoding="utf-8")
+    f.write('\n'.join(map(str, english_stopwords)))
+    f.close()
