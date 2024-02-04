@@ -5,9 +5,8 @@ vault_df                      = u.get_vault_files_as_df()
 u.logger.info('FILES IN VAULT')
 u.logger.info('\n'+ vault_df.to_markdown())
 
-# r'C:\MyFiles\Code\PDB-tools_v2\in\notion_15_test.csv'
-# r'C:\MyFiles\Code\PDB-tools_v2\in\notion.csv'
-df                            = u.pd.read_csv(r'C:\MyFiles\Code\PDB-tools_v2\in\notion.csv'
+
+df                            = u.pd.read_csv(u.IN_CSV
                                           , usecols = ['property_url','url','property_create_dt','property_done','property_create_dt']
                                           , parse_dates=['property_create_dt']
                                           )

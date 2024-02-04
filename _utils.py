@@ -76,42 +76,9 @@ if not LOG_FOLDER.exists():
 
 
 # VAULT_PATH      = r"C:\MyFiles\PKM\PDB"
-VAULT_PATH      = config['path']['VAULT_PATH']
-DWN_VAULT_PATH  = config['path']['DWN_VAULT_PATH']
-VAULT_CSV_PATH  = VAULT_PATH + os.sep + "CSV" + os.sep 
-
-# DB_FILE_NAME    = config['store']['DB_FILE_NAME']
-# DB_FILE_PATH    = config['store']['DB_FILE_PATH']
-# DB_CONNECTION   = sqlite3.connect(os.path.join(PROJECT_FOLDER , DB_FILE_PATH , DB_FILE_NAME))
-# DB_CURSOR       = DB_CONNECTION.cursor()
-# DB_ERROR        = sqlite3.Error
-
-
-# YT_DLP_EXE      = r"C:\Program Files\yt-dlp\yt-dlp.exe"
-# YT_DLP_EXE      = config['path']['YT_DLP_EXE']
-# YT_DLP_FIX_VTT  = r"C:\Program Files\yt-dlp\fix_youtube_vtt.py"
-# YT_DLP_FIX_VTT  = config['path']['YT_DLP_FIX_VTT']
-
-# YT_DLP_GET_SUBS    = rf'''
-#     "{YT_DLP_EXE}" --encoding utf-8 --no-check-certificate --sub-lang "ru,en" --write-auto-sub --write-sub --embed-subs --skip-download -o "test" "{{0}}" 1>nul 
-#     && ( (      if exist test.ru.vtt (py "{YT_DLP_FIX_VTT}" test.ru.vtt && echo **###  Subs RU** && echo:  && type test.ru.*.txt && echo:  )) 
-#             &   if exist test.en.vtt (py "{YT_DLP_FIX_VTT}" test.en.vtt && echo **###  Subs EN** && echo:  && type test.en.*.txt ) ) 
-#     &&  del test.*
-# '''.replace('\n','')
-
-# # probably i can use https://github.com/bindestriche/srt_fix
-# YT_DLP_GET_SUBS   = rf'''
-#     chcp 65001 && 
-#     "{YT_DLP_EXE}" --no-check-certificate --sub-lang "ru,en" --write-auto-sub --write-sub --embed-subs --skip-download -o "test" "{{0}}" 1>nul 
-#     && (    (      
-#                 if exist test.ru.vtt (py "{YT_DLP_FIX_VTT}" test.ru.vtt  && echo:  && type test.ru.*.txt && echo: )
-#             ) 
-#             &   if exist test.en.vtt (py "{YT_DLP_FIX_VTT}" test.en.vtt  && echo:  && type test.en.*.txt ) 
-#             &&  del test.*
-#         ) 
-# '''.replace('\n','')
-
-
+VAULT_PATH      = config['in']['VAULT_PATH']
+OUT_TEXT_FOLDER  = config['out']['OUT_TEXT_FOLDER']
+IN_CSV          = IN_FOLDER / config['in']['CSV_FILE_NAME']
 
 
 
@@ -569,7 +536,7 @@ def try_download(link , return_default_value = False):
     return array
 
 @Error_Handler
-def save_to_file(file_name,cnt_str='',mt_dict=None,folder_path=DWN_VAULT_PATH , return_default_value = False):
+def save_to_file(file_name,cnt_str='',mt_dict=None,folder_path=OUT_TEXT_FOLDER , return_default_value = False):
     if return_default_value : return False
     ret          = frontmatter.Post(content='')
     ret.content  = cnt_str
@@ -639,7 +606,7 @@ def get_yaml_meta_from_file(fd):
     return ret
 
 
-def get_vault_files_as_df(folder_path=DWN_VAULT_PATH):
+def get_vault_files_as_df(folder_path=OUT_TEXT_FOLDER):
     # https://stackoverflow.com/questions/59197529/get-information-about-files-in-a-directory-and-print-in-a-table
     directory = Path(folder_path)
     paths = []
