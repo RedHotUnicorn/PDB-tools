@@ -242,8 +242,9 @@ def download_article_title_and_content(url):
         sent=trafilatura.extract(
             (
                 cleaned_html
-                .replace("</pre>", "```</pre>")
-                .replace("<pre>", "<pre>```")
+                .replace("<br/>", "<br/>\n")
+                # .replace("</pre>", "```</pre>")
+                # .replace("<pre>", "<pre>```")
                 # .replace("<li>", "<li>\n")
             )
             #, output_format='xml'
@@ -252,7 +253,8 @@ def download_article_title_and_content(url):
             , include_links=True
             # ,favor_precision=True
             ,include_comments=True
-        ).replace('```', "\n```\n")
+        )
+        # .replace('```', "\n```\n")
 
         
     except:

@@ -68,6 +68,8 @@ df['md_hash']                 = df                .apply(lambda x: u.generate_ha
 df['gold_link_hash']          = df                .apply(lambda x: u.generate_hash(x.gold_link)                         , axis=1 , result_type='expand' ) 
 df['date']                    = df                .apply(lambda x: u.getdate()  
                                                                                                  , axis=1 , result_type='expand' ) 
+df['src_date_dt']             = u.pd.to_datetime(df['src_date']).dt.date
+
 
 u.logger.info('NA in DF')
 u.logger.info('\n'+ df[df.isna().any(axis=1)].drop(columns=['md','ct']).to_markdown())
@@ -79,26 +81,16 @@ u.logger.info('WHAT TO SAVE')
 u.logger.info('\n'+ df.drop(columns=['md','ct']).to_markdown())
 
 if df.size > 0: 
-    df['done']                = df                .apply(lambda x: u.save_to_file(u.get_valid_filename(x.title.strip()[:200] +' ('+x.gold_link_hash+')')+'.md'
+    df['done']                = df                .apply(lambda x: u.save_to_file(u.get_valid_filename(x.gold_link_hash)+'.md'
                                                                                   ,x.md
                                                                                   ,dict( aliases            = [] + list(set([x.gold_link, x.base_link]))
-                                                                                        ,date               = x.date
+                                                                                        ,title              = x.title
+                                                                                        ,date               = x.src_date_dt
                                                                                         ,src_link           = x.src_link
                                                                                         ,src_date           = x.src_date
                                                                                         ,gold_link          = x.gold_link 
                                                                                         ,gold_link_hash     = x.gold_link_hash 
-                                                                                        ,md_hash            = x.md_hash
-                                                                                        # ,status_code        = x.status_code
-                                                                                        # ,manually_edited    = False
-                                                                                        # ,force_reload       = False
-                                                                                        ,lock               = True
-                                                                                        ,archive            = False
-                                                                                        ,up                 = []
-                                                                                        ,left               = [] 
-                                                                                        ,right              = [] 
-                                                                                        ,down               = [] 
                                                                                         ,tags               = ['#host_'+str(x.gold_hostname).strip().replace('.','_')]
-                                                                                        ,settings           = []
                                                                                         )
                                                                                     ) 
                                                             , axis=1 )
