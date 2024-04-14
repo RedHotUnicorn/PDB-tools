@@ -18,20 +18,25 @@ import  datetime
 import  hashlib
 import  uuid
 import  frontmatter
-from    yaml import CSafeDumper as SafeDumper
+#from    yaml import CSafeDumper as SafeDumper
 import  yt_dlp
+
+#for converting to pdf
+from md2pdf.core import md2pdf
 
 
 
 def get_valid_filename(str):
     return "".join( x for x in str if (x.isalnum() or x in "._- "))
 
+# TODO somehow on linux it stop working. deam
+# PROJECT_FOLDER  = next(p for p in Path(__file__).parents    if  "PDB-tools" in p.name 
+#                                                         and len(list(p.glob('_config.ini'))) 
+#                                                         and len(list(p.glob('readme.md'))) 
+#                                                         and len(list(p.glob('.gitignore'))) 
+#                    )
 
-PROJECT_FOLDER  = next(p for p in Path(__file__).parents    if  "PDB-tools" in p.name 
-                                                        and len(list(p.glob('_config.ini'))) 
-                                                        and len(list(p.glob('readme.md'))) 
-                                                        and len(list(p.glob('.gitignore'))) 
-                   )
+PROJECT_FOLDER  = Path(__file__).parent
 
 IN_FOLDER       = PROJECT_FOLDER / 'in'
 TMP_FOLDER      = PROJECT_FOLDER / 'tmp'
