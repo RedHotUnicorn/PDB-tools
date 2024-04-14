@@ -15,6 +15,7 @@ url = 'https://thisisdata.ru/blog/uchimsya-primenyat-okonnyye-funktsii/'
 # url = "https://habr.com/ru/articles/696274/"
 # url = "https://habr.com/en/articles/696274/comments/"
 # url = "https://habr.com/ru/articles/734980/"
+url = "https://t.me/zettelkasten_ch/549?embed=1&mode=tme"
 
 DEBUG_FOLDER = u.TMP_FOLDER / '_test_trafilatura'
 
@@ -38,11 +39,12 @@ def download_article_title_and_content(url):
         cleaned_html = str(downloaded_bs)
 
         with (DEBUG_FOLDER / 'cleaned.html' ).open('w',encoding='utf8') as f:
-            f.write(cleaned_html)
+            f.write(cleaned_html.replace("<br/>", "\n"))
 
         sent=trafilatura.extract(
             (
                 cleaned_html
+                .replace("<br/>", "\n<br/>\n")
                 # .replace("</pre>", "```</pre>")
                 # .replace("<pre>", "<pre>```")
                 # .replace("<li>", "<li>\n")
