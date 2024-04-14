@@ -391,7 +391,9 @@ def download_youtube_title_and_content(  url
     # print(files)
         
     sent =''
-    print()
+
+    sent += '![]('+url+') \n'
+
     with open(list(directory.glob(hash_word+'*.description'))[0],'r',encoding='utf8') as f:
         sent +='# Description \n'
         sent += f.read()
