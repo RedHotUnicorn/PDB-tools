@@ -12,3 +12,6 @@ __pycache__/
 *$py.class
 
 *config.ini
+
+.idea/*
+env/*
