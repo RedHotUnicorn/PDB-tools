@@ -23,7 +23,8 @@ import  yt_dlp
 
 #for converting to pdf
 from md2pdf.core import md2pdf
-
+import readability
+from markdownify import markdownify as md
 
 
 def get_valid_filename(str):
@@ -239,22 +240,24 @@ def download_article_title_and_content(url):
         [tag.attrs.clear() for tag in downloaded_bs.find_all(['pre','code',"li"])]
         cleaned_html = str(downloaded_bs)
 
-        sent=trafilatura.extract(
-            (
-                cleaned_html
-                .replace("<br/>", "<br/>\n")
-                # .replace("</pre>", "```</pre>")
-                # .replace("<pre>", "<pre>```")
-                # .replace("<li>", "<li>\n")
-            )
-            #, output_format='xml'
-            ,include_images=True
-            ,include_formatting=True
-            , include_links=True
-            # ,favor_precision=True
-            ,include_comments=True
-        )
-        # .replace('```', "\n```\n")
+        # sent=trafilatura.extract(
+        #     (
+        #         cleaned_html
+        #         .replace("<br/>", "<br/>\n")
+        #         # .replace("</pre>", "```</pre>")
+        #         # .replace("<pre>", "<pre>```")
+        #         # .replace("<li>", "<li>\n")
+        #     )
+        #     #, output_format='xml'
+        #     ,include_images=True
+        #     ,include_formatting=True
+        #     , include_links=True
+        #     # ,favor_precision=True
+        #     ,include_comments=True
+        # )
+        # # .replace('```', "\n```\n")
+        doc = readability.Document(str(downloaded_bs))
+        sent = md(doc.summary())
 
         
     except:

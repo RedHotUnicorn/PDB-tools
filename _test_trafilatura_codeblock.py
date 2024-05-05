@@ -16,6 +16,7 @@ url = 'https://thisisdata.ru/blog/uchimsya-primenyat-okonnyye-funktsii/'
 # url = "https://habr.com/en/articles/696274/comments/"
 # url = "https://habr.com/ru/articles/734980/"
 url = "https://t.me/zettelkasten_ch/549?embed=1&mode=tme"
+url = "https://t.me/durov/272?embed=1&mode=tme"
 
 DEBUG_FOLDER = u.TMP_FOLDER / '_test_trafilatura'
 
@@ -36,34 +37,48 @@ def download_article_title_and_content(url):
 
 
         [tag.attrs.clear() for tag in downloaded_bs.find_all(['pre','code',"li"])]
+
+
         cleaned_html = str(downloaded_bs)
 
         with (DEBUG_FOLDER / 'cleaned.html' ).open('w',encoding='utf8') as f:
-            f.write(cleaned_html.replace("<br/>", "\n"))
+            f.write(cleaned_html)
 
+        # sent = trafilatura.bare_extraction(
         sent=trafilatura.extract(
             (
                 cleaned_html
-                .replace("<br/>", "\n<br/>\n")
+                # .replace("<p/>", "\n<br/>\n")
+                #.replace("<br/>", "\n<br/>\n")
                 # .replace("</pre>", "```</pre>")
                 # .replace("<pre>", "<pre>```")
                 # .replace("<li>", "<li>\n")
             )
-            #, output_format='xml'
+            , output_format='markdown'
             ,include_images=True
             ,include_formatting=True
+             # ,favor_precision=True
             , include_links=True
-            # ,favor_precision=True
-            ,include_comments=True
+             # ,favor_recall = True
+            # ,include_comments=True
         )
+
+        print(str(sent)) 
+        # for element in sent.body.iter('*'):
+        #     print(element) 
+        
         # .replace('```', "\n```\n")
 
         with (DEBUG_FOLDER / 'sent.md' ).open('w',encoding='utf8') as f:
-            f.write(sent)
-    except:
+            f.write(str(sent))
+    except Exception as e:
         sent = ''
         title = ''
+        print(e)
 
     return [ title , sent ]
 
 download_article_title_and_content(url)
+
+
+
