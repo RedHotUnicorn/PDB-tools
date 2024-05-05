@@ -91,7 +91,7 @@ html_settings['empty'].add('div')
 html_settings['attributes'].update({'div': () })
 html_settings['tags'].add('code')
 html_settings['empty'].add('code')
-html_settings['attributes'].update({'code': () })
+html_settings['attributes'].update({'code': ('class') })
 
 
 
