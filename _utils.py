@@ -259,6 +259,9 @@ def download_article_title_and_content(url):
         doc = readability.Document(str(downloaded_bs))
         sent = md(doc.summary())
 
+        if title == 'Telegram Widget':
+            title = sent[:100]
+
         
     except:
         sent = None
