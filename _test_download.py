@@ -83,8 +83,10 @@ u.logger.info('\n'+ df.drop(columns=['md','ct']).to_markdown())
 if df.size > 0: 
     df['done']                = df                .apply(lambda x: u.save_to_file(u.get_valid_filename(x.gold_link_hash)+'.md'
                                                                                   ,x.md
-                                                                                  ,dict( aliases            = [] + list(set([x.gold_link, x.base_link]))
-                                                                                        ,title              = x.title
+                                                                                  ,dict( 
+                                                                                         # aliases            = [] + list(set([x.gold_link, x.base_link]))
+                                                                                        # ,
+                                                                                         title              = x.title
                                                                                         ,date               = x.src_date_dt
                                                                                         ,src_link           = x.src_link
                                                                                         ,src_date           = x.src_date
