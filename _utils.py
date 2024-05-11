@@ -25,6 +25,10 @@ import  yt_dlp
 from md2pdf.core import md2pdf
 import readability
 from markdownify import markdownify as md
+import requests
+
+import morss.readabilite as m
+import lxml.etree
 
 
 def get_valid_filename(str):
@@ -230,34 +234,25 @@ def download_article_title_and_content(url):
     3. additional replacements bcs trafilatura can't catch some code blocks
     """
     try:
-        downloaded_bs = BeautifulSoup(    trafilatura.fetch_url(url)
-                                        , features="html.parser")
-        title_all = [x.get_text() for x in downloaded_bs.find_all('title')]
+        response        = requests.get(url)
+        downloaded_bs   = BeautifulSoup(  response.text, features="lxml")
+        html            = str(downloaded_bs)
 
-        title = title_all[0] if title_all  else None
+        # m.tags_good.append('b')
+        # m.regex_good = re.compile('|'.join(m.tags_good), re.I)
+        # print(m.tags_good)
+        # print(m.regex_good)
 
+        readability_morss = m.get_article(html)
+        node = m.get_best_node(m.parse(html))
+        h = None
+        if node:
+            h = lxml.etree.tostring(node, method='html')
 
-        [tag.attrs.clear() for tag in downloaded_bs.find_all(['pre','code',"li"])]
-        cleaned_html = str(downloaded_bs)
+        sent = md(readability_morss or h or html,autolinks = False)
 
-        # sent=trafilatura.extract(
-        #     (
-        #         cleaned_html
-        #         .replace("<br/>", "<br/>\n")
-        #         # .replace("</pre>", "```</pre>")
-        #         # .replace("<pre>", "<pre>```")
-        #         # .replace("<li>", "<li>\n")
-        #     )
-        #     #, output_format='xml'
-        #     ,include_images=True
-        #     ,include_formatting=True
-        #     , include_links=True
-        #     # ,favor_precision=True
-        #     ,include_comments=True
-        # )
-        # # .replace('```', "\n```\n")
-        doc = readability.Document(str(downloaded_bs))
-        sent = md(doc.summary())
+        title_all       = [x.get_text() for x in downloaded_bs.find_all('title')]
+        title           = title_all[0] if title_all  else None
 
         if title == 'Telegram Widget':
             title = sent[:100]
