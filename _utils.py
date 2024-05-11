@@ -221,7 +221,6 @@ def get_hostname(link):
                     WORK WITH MD FILES
 ######################################################################
 """
-
 def replace_tags_in_content(str_w_tags):
     return re.sub(r"(^|[\s\[])(\#[^\s#]+)", r"\1\\\2", str_w_tags)
 
@@ -255,7 +254,11 @@ def download_article_title_and_content(url):
         title           = title_all[0] if title_all  else None
 
         if title == 'Telegram Widget':
-            title = sent[:100]
+            # TODO: use clean_text(rubbish_text): ?
+            red_sent = re.sub(r'https?:\/\/\S+', '', sent, flags=re.MULTILINE)
+            red_sent = red_sent.replace('\r','').replace('\n','').replace('  ',' ')
+            red_sent = ''.join(e for e in red_sent if e.isalnum() or e.isspace()  ) 
+            title = red_sent[:150]
 
         
     except:
