@@ -9,6 +9,7 @@ from markdownify import markdownify as md
 
 import morss.readabilite as m
 import lxml.etree
+import re
 
 
 url="https://microsoft.github.io/lida/"
@@ -23,9 +24,9 @@ url = "https://habr.com/ru/articles/696274/"
 # url = "https://habr.com/en/articles/696274/comments/"
 url = "https://habr.com/ru/articles/734980/"
 url = "https://t.me/zettelkasten_ch/549?embed=1&mode=tme"
-url = "https://t.me/durov/272?embed=1&mode=tme"
-url = "https://habr.com/en/articles/805637/"
-url = 'https://thisisdata.ru/blog/kak-pravilno-organizovat-rabotu-s-gipotezami/'
+# url = "https://t.me/durov/272?embed=1&mode=tme"
+# url = "https://habr.com/en/articles/805637/"
+# url = 'https://thisisdata.ru/blog/kak-pravilno-organizovat-rabotu-s-gipotezami/'
 # url = 'https://habr.com/en/companies/ispsystem/articles/805709/'
 # url = 'https://sketchplanations.com/winking'
 # url = 'https://numinous.productions/timeful/'
@@ -52,7 +53,9 @@ with (DEBUG_FOLDER / '01_downloaded_bs.html' ).open('w',encoding='utf8') as f:
 html = str(downloaded_bs)
 
 # m.tags_good.append('b')
+# m.regex_good = re.compile('|'.join(m.tags_good), re.I)
 # print(m.tags_good)
+# print(m.regex_good)
 
 readability_morss = m.get_article(html
     # , threshold=50
@@ -63,8 +66,8 @@ with (DEBUG_FOLDER / '02_sanitized_morss.html' ).open('w',encoding='utf8') as f:
 
 # print(''.join(m.get_best_node(m.parse(html)).itertext()))
 node = m.get_best_node(m.parse(html))
-h = ''
-if len(node):
+h = None
+if node:
     h = lxml.etree.tostring(node, method='html')
 # print(h)
 
