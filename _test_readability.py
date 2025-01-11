@@ -12,7 +12,7 @@ import lxml.etree
 import re
 
 
-url="https://microsoft.github.io/lida/"
+url = "https://microsoft.github.io/lida/"
 url = "https://rxresu.me/"
 url = "https://stackoverflow.com/a/69178995"
 url = 'https://nesslabs.com/best'  
@@ -34,6 +34,9 @@ url = "https://t.me/zettelkasten_ch/549?embed=1&mode=tme"
 
 # url = 'https://t.me/obsidian_hub/137?embed=1&mode=tme'
 # url = 'https://github.com/roovo/obsidian-card-board'
+
+url = 'https://clauswilke.com/dataviz/directory-of-visualizations.html#distributions'
+
 
 DEBUG_FOLDER = u.TMP_FOLDER / '_test_readability'
 DEBUG_FOLDER.mkdir(parents=True, exist_ok=True)
@@ -67,10 +70,11 @@ with (DEBUG_FOLDER / '02_sanitized_morss.html' ).open('w',encoding='utf8') as f:
 # print(''.join(m.get_best_node(m.parse(html)).itertext()))
 node = m.get_best_node(m.parse(html))
 h = None
-if node:
+if node is not None:
+    node.make_links_absolute(url)
     h = lxml.etree.tostring(node, method='html')
 # print(h)
 
 
 with (DEBUG_FOLDER / 'markdownify_morss.md' ).open('w',encoding='utf8') as f:
-    f.write(md(readability_morss or h or html,autolinks = False ))
+    f.write(md(h or readability_morss or html,autolinks = True ))
