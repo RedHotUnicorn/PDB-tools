@@ -1,5 +1,5 @@
 import trafilatura
-import _utils as u
+import _utils_old as u
 from html_sanitizer import Sanitizer, sanitizer as s
 from bs4 import BeautifulSoup 
 

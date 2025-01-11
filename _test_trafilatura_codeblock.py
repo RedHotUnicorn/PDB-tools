@@ -1,6 +1,6 @@
 import trafilatura
 from bs4 import BeautifulSoup
-import _utils as u
+import _utils_old as u
 
 
 url="https://microsoft.github.io/lida/"

@@ -7,7 +7,7 @@ import spacy
 from markdown_plain_text.extention import convert_to_plain_text  # https://github.com/kostyachum/python-markdown-plain-text
 import re
 import emoji
-import _utils as u
+import _utils_old as u
 import sqlite3
 
 import string

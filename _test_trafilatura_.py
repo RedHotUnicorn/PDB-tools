@@ -1,6 +1,6 @@
 import trafilatura
 from bs4 import BeautifulSoup
-import _utils as u
+import _utils_old as u
 from trafilatura.xpaths import BODY_XPATH
 from trafilatura.main_extractor import extract_comments, extract_content
 from trafilatura.settings import DEFAULT_CONFIG, Extractor, use_config
