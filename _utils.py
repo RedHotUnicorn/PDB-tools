@@ -4,6 +4,11 @@ import datetime
 import shutil
 import os
 from typing import Type
+import  uuid
+import morss.readabilite as morss
+import lxml.etree
+import lxml.html
+from weasyprint import HTML , CSS
 
 def get_valid_filename(str):
     return "".join( x for x in str if (x.isalnum() or x in "._- "))
@@ -32,6 +37,14 @@ def Error_Handler(func):
             return func(*args , return_default_value = True , **kwargs)
     return Inner_Function
 
+def get_hash(file_or_str):
+    s = ''
+    if isinstance(file_or_str, str):
+        s = file_or_str
+    elif hasattr(file_or_str, "read"): 
+        s = file_or_str.read()
+    return uuid.uuid5( uuid.NAMESPACE_URL , s).hex
+
 def save_data_to_file(in_str:str, in_bytes: bytes, ext:str) -> None:
     return None
 
@@ -45,7 +58,7 @@ def add_program_settings(program: str) -> str:
         case _:
             return "Something's wrong with the internet"
 
-def get_html_from_url(url: str ) -> str:
+def get_html_from_url_as_str(url: str ) -> str:
     PROGRAMS_FOR_HTML: list[str] = ['monolith']
 
     best_program = next(x for x in PROGRAMS_FOR_HTML if check_program_is_installed(x))
@@ -54,3 +67,34 @@ def get_html_from_url(url: str ) -> str:
     # return [check_program_is_installed(x) for x in PROGRAMS_FOR_HTML ]
 
     return os.popen(best_program+ " " + best_program_settings + " " + url).read()
+
+
+def get_readable_content(html: str) -> str:
+    m_article = morss.get_article(html)
+    m_bestnode = morss.get_best_node(morss.parse(html))
+    if m_bestnode is not None:
+        h = lxml.etree.tostring(m_bestnode, method='html')
+
+    return m_article or m_bestnode
+
+IMG_CSS_SETTING="""
+    img {
+        width       : 85%;
+        height      : auto;
+        }
+
+    pre:has(code)  {
+        background  : #E8E8E8;
+        overflow    : auto;
+        white-space : pre-wrap !important;
+        }
+
+"""
+DPI_SETTING= 150
+
+
+def get_pdf_from_html(html: str):
+    HTML(string=html).write_pdf( '88888-morss+md_150.pdf'
+                                , optimize_images=True 
+                                , stylesheets=[CSS(string=IMG_CSS_SETTING)]
+                                , dpi=DPI_SETTING)
