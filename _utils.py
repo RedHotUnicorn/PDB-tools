@@ -88,13 +88,22 @@ IMG_CSS_SETTING="""
         overflow    : auto;
         white-space : pre-wrap !important;
         }
-
+        
+/*Doesn't work VVVVV */
+    th, td {
+        border-bottom: 1px solid #ddd !important;
+        }
+    thead {
+        display: table-header-group;
+        background  : #E8E8E8;
+    }
+    table, td { border: 1px solid }
 """
-DPI_SETTING= 150
+DPI_SETTING= 200
 
 
 def get_pdf_from_html(html: str):
-    HTML(string=html).write_pdf( '88888-morss+md_150.pdf'
-                                , optimize_images=True 
-                                , stylesheets=[CSS(string=IMG_CSS_SETTING)]
-                                , dpi=DPI_SETTING)
+    HTML(string=html).write_pdf( 'test.pdf'
+                                                        , optimize_images=True 
+                                                        , stylesheets=[CSS(string=IMG_CSS_SETTING)]
+                                                        , dpi=DPI_SETTING)
