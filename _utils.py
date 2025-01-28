@@ -107,3 +107,123 @@ def get_pdf_from_html(html: str):
                                                         , optimize_images=True 
                                                         , stylesheets=[CSS(string=IMG_CSS_SETTING)]
                                                         , dpi=DPI_SETTING)
+    
+
+
+##################################################
+# WORK WITH SOURCE
+##################################################
+
+
+import w3lib.url
+import urllib.parse
+import requests
+
+
+
+REMOVE_PARAMS_ARRAY = [
+      'utm_campaign'
+    , 'utm_medium'
+    , 'utm_source'
+    , 'utm_name'
+    , 'utm_term'
+    , 'utm_content'
+]
+
+
+STRICT_PARAMS_DICT  = {
+      "www.youtube.com" :['v', 'list','t']
+}
+
+ADD_PARAMS_DICT  = {
+        "t.me" : {"embed":1 , "mode": "tme"}
+      , "www.reddit.com" : {"rdt":0 }
+}
+
+EXCL_REDIR_ARRAY    = [
+      "https://consent."
+    , "https://www.linkedin.com/signup/cold-join"
+    # , "www."
+]
+
+def get_expanded_link(link):
+    """
+    1. get req with redirects
+    2. get last redirect after excluding "wrong" redirects.
+
+    Example:
+    - https://m.youtube.com/playlist?list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL
+    V
+    - https://www.youtube.com/playlist?app=desktop&list=PL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL
+    V
+    - https://consent.youtube.com/ml?continue=https://www.youtube.com/playlist?app%3Ddesktop%26list%3DPL_yqdE3j5wTCJxy6J5bqSkCs0KxCWVAVL%26cbrd%3D1&gl=DE&hl=de&cm=2&pc=yt&src=1
+    
+    the last one is not nessesary. so we need exclude it
+    """
+
+    response = requests.head(link, allow_redirects=True,verify=False,timeout=1)                                 # https://stackoverflow.com/questions/70560247/bypassing-eu-consent-request
+    
+    tmp_res = [resp.url for resp in response.history + [response] if not any(x in resp.url for x in EXCL_REDIR_ARRAY)][-1] if response.history else response.url
+    return '' if not isinstance(tmp_res, str) else tmp_res
+
+    """
+    TODO: 
+    Somehow I need to recognise such transformation... Manual variant works but every time need to fix
+    - "https://sql-optimizer.streamlit.app/"
+    V		
+    - "https://sql-optimizer.streamlit.app/-/login?payload=MTY5ODY5OTM2NXw5YV9KTVl2SXAtTVNya2NrS3U4RlJ3UG0wQlAwQjJ3STdvcGpSZzk2Z2ZVOEc5Z1ROVHF5NWhqaGw1Q2JoZDVnUldFX1VCVTI3TlJuS0ZRZFJyNUthLXFhMVJQMzhlc2sxSThZNXZlendiN3BhR3YzODM5T0RnNXVuYjQ3eXlFN2lZeHI1TXFXRlFRS1k1VjRWejJoa2s2YnhScE9BdU1LUWpZUW9vaDBzOHhucmtvbXB4QUozY1dzeG1EU1hlMWVndkVGcm9uYjhtcnUyTjhJVWRuV0xkb0l3cWxNN1k1VVFkaTdHa2pqTG1LeHVpbUNWYm1ZMDdaZWxlTi1MZW1PellJaGp2dUZNdHBRYzh4ZEdfdHRPei1YenZ5SXE5MmExYm1XVllxZkFCZUVaSWtKV2VCOTQ3b0dwWUQ1bzl1TVR0b1N4N2F1eE5Xci1zUmE0US1XOFRDQ0NXYnNCLXNhV1NlZ1cxX0labGVpVWo0VzlfcHRJVWpIRGNGWW5UeU10Y3hhTXRRYjUyYy1CUmVrMl9kZ0VJZTViVWcwYmlFNzdrZ3kwaTdWNWdOY3JSd3FNWHFuWExKMjI3NG5qR3BpUjFCT1doSWlIdlpEMjNHVlFyd3pzR1V6UTVWbDg3TWNXcDJEYmY1a05lTDRLQ1ZUMnVVMXhmWG9VRjdoQTJFNzJpM0JyaWx4S2N6MVdZd3hoTDdwM1hnQnzhNT077_OAts4Nrn2u0_nBkbm63EQYItY5eel4wryPYg%3D%3D"
+    
+    """
+
+@Error_Handler
+def get_gold_link(base_link , return_default_value = False):
+    """
+    1. Standartize the curent url
+    2. Parse the hostname and query
+    3. If the query contains smth from REMOVE_PARAMS_ARRAY (mostly it's form RSS) -- remove it
+    4. If the hostname eq to some espeitial rules -- repmve all except params from array
+
+    version right now not used but should be , probably
+    """
+    if return_default_value : return base_link
+
+    gold_link       = base_link
+    gold_link       = gold_link.replace("&amp;", "&")
+
+    o               = urllib.parse.urlsplit(gold_link)
+    gold_link       = o._replace(     scheme=o.scheme or "https"                 
+                                    , netloc=o.netloc or o.path
+                                    , path  ="" if o.path and not o.netloc and not o.scheme  else o.path
+                                ).geturl()                                          # https://stackoverflow.com/a/61859560/5353177
+
+
+    gold_link       =  get_expanded_link(gold_link)                                       # try_expand      = urlexpander.expand(base_link , use_head=False)                # gold_link = url_normalize(urlexpander.expand(base_link)) 
+                                                                                    # if      (   "__CLIENT_ERROR__".lower()          not in try_expand.lower() ) \
+                                                                                    #     and (   "__connectionpool_error__".lower()  not in try_expand.lower() ):    # __CLIENT_ERROR__: https://github.com/SMAPPNYU/urlExpander/issues http://t.me\__connectionpool_error__/
+                                                                                    #     gold_link   = try_expand                          
+
+    o               = urllib.parse.urlsplit(gold_link)
+    o_query         = dict(urllib.parse.parse_qsl(o.query))                         # https://gist.github.com/rokcarl/20b5bf8dd9b1998880b7
+    for key in REMOVE_PARAMS_ARRAY:
+        o_query.pop(key, None)     
+                                                            # https://stackoverflow.com/a/70785605/5353177
+
+    gold_link = o._replace(query=urllib.parse.urlencode(o_query)
+                            ,scheme=o.scheme if o.scheme == '' else "https"
+                            ).geturl()
+
+    o_hostname          = o.hostname
+    # if gold_link.scheme == '':
+    #      gold_link.scheme == 'https'
+    if o_hostname in STRICT_PARAMS_DICT:
+        params          = STRICT_PARAMS_DICT[o_hostname]
+        gold_link       = w3lib.url.url_query_cleaner(gold_link,params)
+    if o_hostname in ADD_PARAMS_DICT:
+        params_to_add   = ADD_PARAMS_DICT[o_hostname]
+        gold_link       = w3lib.url.add_or_replace_parameters(gold_link,params_to_add)
+        
+
+    return gold_link
+
+def get_hostname(link):
+    return urllib.parse.urlsplit(link).hostname
