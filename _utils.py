@@ -146,7 +146,8 @@ EXCL_REDIR_ARRAY    = [
     # , "www."
 ]
 
-def get_expanded_link(link):
+@Error_Handler
+def get_expanded_url(url, return_default_value = False):
     """
     1. get req with redirects
     2. get last redirect after excluding "wrong" redirects.
@@ -160,11 +161,15 @@ def get_expanded_link(link):
     
     the last one is not nessesary. so we need exclude it
     """
+    if return_default_value : return ''
 
-    response = requests.head(link, allow_redirects=True,verify=False,timeout=1)                                 # https://stackoverflow.com/questions/70560247/bypassing-eu-consent-request
-    
+    response = requests.head(url, allow_redirects=True,verify=False, timeout=5)                                 # https://stackoverflow.com/questions/70560247/bypassing-eu-consent-request
     tmp_res = [resp.url for resp in response.history + [response] if not any(x in resp.url for x in EXCL_REDIR_ARRAY)][-1] if response.history else response.url
     return '' if not isinstance(tmp_res, str) else tmp_res
+
+
+
+    
 
     """
     TODO: 
@@ -175,55 +180,60 @@ def get_expanded_link(link):
     
     """
 
+
+def standartize_url(url: str) -> str:
+    # <scheme>://<netloc>/<path>;<params>?<query>#<fragment>
+    url       = url.replace("&amp;", "&")
+    o         = urllib.parse.urlsplit(url)
+    url       = o._replace(       scheme=o.scheme or "https"                 
+                                , netloc=o.netloc or o.path
+                                , path  ="" if o.path and not o.netloc and not o.scheme  else o.path
+                                ).geturl()  
+    # https://stackoverflow.com/a/61859560/5353177  
+    return url
+
+def clean_url(url: str) -> str:
+    o               = urllib.parse.urlsplit(url)
+    o_query         = dict(urllib.parse.parse_qsl(o.query))                         # https://gist.github.com/rokcarl/20b5bf8dd9b1998880b7
+    for key in REMOVE_PARAMS_ARRAY:
+        o_query.pop(key, None)     
+                                                            # https://stackoverflow.com/a/70785605/5353177
+
+    url = o._replace(query=urllib.parse.urlencode(o_query)
+                            ,scheme=o.scheme or "https"
+                            ).geturl()
+
+    o_hostname          = o.hostname
+    if o_hostname in STRICT_PARAMS_DICT:
+        params          = STRICT_PARAMS_DICT[o_hostname]
+        url             = w3lib.url.url_query_cleaner(url,params)
+    if o_hostname in ADD_PARAMS_DICT:
+        params_to_add   = ADD_PARAMS_DICT[o_hostname]
+        url             = w3lib.url.add_or_replace_parameters(url,params_to_add)
+    return url
+
+
 @Error_Handler
-def get_gold_link(base_link , return_default_value = False):
+def get_gold_url(url , return_default_value = False):
     """
     1. Standartize the curent url
     2. Parse the hostname and query
     3. If the query contains smth from REMOVE_PARAMS_ARRAY (mostly it's form RSS) -- remove it
     4. If the hostname eq to some espeitial rules -- repmve all except params from array
 
-    version right now not used but should be , probably
     """
-    if return_default_value : return base_link
+    if return_default_value : return url
 
-    gold_link       = base_link
-    gold_link       = gold_link.replace("&amp;", "&")
+    url = standartize_url(url)
+    url = get_expanded_url(url)                                   
+    url = clean_url(url)   
 
-    o               = urllib.parse.urlsplit(gold_link)
-    gold_link       = o._replace(     scheme=o.scheme or "https"                 
-                                    , netloc=o.netloc or o.path
-                                    , path  ="" if o.path and not o.netloc and not o.scheme  else o.path
-                                ).geturl()                                          # https://stackoverflow.com/a/61859560/5353177
+    return url
 
+def get_host_name(url :str) -> str:
+    return urllib.parse.urlsplit(url).hostname
 
-    gold_link       =  get_expanded_link(gold_link)                                       # try_expand      = urlexpander.expand(base_link , use_head=False)                # gold_link = url_normalize(urlexpander.expand(base_link)) 
-                                                                                    # if      (   "__CLIENT_ERROR__".lower()          not in try_expand.lower() ) \
-                                                                                    #     and (   "__connectionpool_error__".lower()  not in try_expand.lower() ):    # __CLIENT_ERROR__: https://github.com/SMAPPNYU/urlExpander/issues http://t.me\__connectionpool_error__/
-                                                                                    #     gold_link   = try_expand                          
+def get_host_url(url :str) -> str:
+    o=urllib.parse.urlsplit(url)
+    return o.scheme+'://'+o.netloc
 
-    o               = urllib.parse.urlsplit(gold_link)
-    o_query         = dict(urllib.parse.parse_qsl(o.query))                         # https://gist.github.com/rokcarl/20b5bf8dd9b1998880b7
-    for key in REMOVE_PARAMS_ARRAY:
-        o_query.pop(key, None)     
-                                                            # https://stackoverflow.com/a/70785605/5353177
-
-    gold_link = o._replace(query=urllib.parse.urlencode(o_query)
-                            ,scheme=o.scheme if o.scheme == '' else "https"
-                            ).geturl()
-
-    o_hostname          = o.hostname
-    # if gold_link.scheme == '':
-    #      gold_link.scheme == 'https'
-    if o_hostname in STRICT_PARAMS_DICT:
-        params          = STRICT_PARAMS_DICT[o_hostname]
-        gold_link       = w3lib.url.url_query_cleaner(gold_link,params)
-    if o_hostname in ADD_PARAMS_DICT:
-        params_to_add   = ADD_PARAMS_DICT[o_hostname]
-        gold_link       = w3lib.url.add_or_replace_parameters(gold_link,params_to_add)
-        
-
-    return gold_link
-
-def get_hostname(link):
-    return urllib.parse.urlsplit(link).hostname
