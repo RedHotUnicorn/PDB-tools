@@ -132,7 +132,7 @@ REMOVE_PARAMS_ARRAY = [
 
 
 STRICT_PARAMS_DICT  = {
-      "www.youtube.com" :['v', 'list','t']
+      "www.youtube.com" :['v', 'list','t','feature']
 }
 
 ADD_PARAMS_DICT  = {
@@ -162,8 +162,14 @@ def get_expanded_url(url, return_default_value = False):
     the last one is not nessesary. so we need exclude it
     """
     if return_default_value : return ''
+    try:
+        response = requests.head(url, allow_redirects=True,verify=False, timeout=5)                                 # https://stackoverflow.com/questions/70560247/bypassing-eu-consent-request
+    except:
+        # for 'www.cbc.ca' and  'www.inat.fr/'. this site won't responce without uagent
+        import ua_generator
+        ua       = ua_generator.generate()
+        response = requests.head(url, allow_redirects=True,verify=False, timeout=20,headers=ua.headers.get())   
 
-    response = requests.head(url, allow_redirects=True,verify=False, timeout=5)                                 # https://stackoverflow.com/questions/70560247/bypassing-eu-consent-request
     tmp_res = [resp.url for resp in response.history + [response] if not any(x in resp.url for x in EXCL_REDIR_ARRAY)][-1] if response.history else response.url
     return '' if not isinstance(tmp_res, str) else tmp_res
 
