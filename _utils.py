@@ -110,6 +110,26 @@ def get_pdf_from_html(html: str, name:str='test' ):
                                                         , dpi=DPI_SETTING)
 
 
+STEAL_SETTINGS={
+    0 :{
+          "step"    : "headers request"
+        , "postfix" : ".00.headers"
+        , "ext"     : "json"
+        , 'store'   : True
+        , "cond"    : '"{ctype}"=="image/png"'
+    },
+    1 :{
+          "step"    : "original content request"
+        , "postfix" : ".01.orig"
+        , "ext"     : None
+        , 'store'   : True
+    }
+
+}
+
+# cond=STEAL_SETTINGS[0]['cond']
+# print(eval(cond.format(ctype='image/png')))
+
 @Error_Handler
 def save_data_to_file(file_name:str , in_str:str,return_default_value : bool = False) -> bool:
     if return_default_value : return False
