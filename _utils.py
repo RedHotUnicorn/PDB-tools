@@ -9,6 +9,9 @@ import morss.readabilite as morss
 import lxml.etree
 import lxml.html
 from weasyprint import HTML , CSS
+import itertools
+import re
+from    bs4 import BeautifulSoup
 
 def get_valid_filename(str):
     return "".join( x for x in str if (x.isalnum() or x in "._- "))
@@ -44,9 +47,6 @@ def get_hash(file_or_str):
     elif hasattr(file_or_str, "read"): 
         s = file_or_str.read()
     return uuid.uuid5( uuid.NAMESPACE_URL , s).hex
-
-def save_data_to_file(in_str:str, in_bytes: bytes, ext:str) -> None:
-    return None
 
 def check_program_is_installed(program: str = 'default' ) -> bool:
     return shutil.which(program) is not None
@@ -102,13 +102,49 @@ IMG_CSS_SETTING="""
 DPI_SETTING= 200
 
 
-def get_pdf_from_html(html: str):
-    HTML(string=html).write_pdf( 'test.pdf'
+def get_pdf_from_html(html: str, name:str='test' ):
+    name = name + '.pdf'
+    HTML(string=html).write_pdf( OUT_FOLDER /  name 
                                                         , optimize_images=True 
                                                         , stylesheets=[CSS(string=IMG_CSS_SETTING)]
                                                         , dpi=DPI_SETTING)
+
+
+@Error_Handler
+def save_data_to_file(file_name:str , in_str:str,return_default_value : bool = False) -> bool:
+    if return_default_value : return False
+    file   = OUT_FOLDER / file_name
+    if file.exists(): return True
+    with file.open( "w", encoding="utf-8") as f:
+        f.write(in_str)
+    return True
+
+
+
+@Error_Handler
+def download(url: str ,return_default_value : bool = False) -> bool:
+    if return_default_value : return False
+
+    import minify_html
+
     
 
+    html = get_html_from_url_as_str(url)
+    
+    get_meta_info(html)
+    hash = get_hash(url)
+    save_data_to_file(hash+'.html',in_str=html)
+    readable = get_readable_content(html)
+    get_pdf_from_html(readable,hash)
+    return True
+
+def get_meta_info(html):
+    bs   = BeautifulSoup(  html, features="lxml")
+    all_titles       = [x.get_text() for x in bs.find_all('title')]
+    title           = all_titles[0] if all_titles  else None
+    # print(title)
+    desc = bs.find('meta', attrs={'name': 'description'})['content']
+    # print(desc)
 
 ##################################################
 # WORK WITH SOURCE
@@ -128,11 +164,14 @@ REMOVE_PARAMS_ARRAY = [
     , 'utm_name'
     , 'utm_term'
     , 'utm_content'
+    
 ]
-
+REMOVE_PARAMS_DICT  = {
+      "www.youtube.com" :['feature']
+}
 
 STRICT_PARAMS_DICT  = {
-      "www.youtube.com" :['v', 'list','t','feature']
+      "www.youtube.com" :['v', 'list','t']
 }
 
 ADD_PARAMS_DICT  = {
@@ -168,7 +207,7 @@ def get_expanded_url(url, return_default_value = False):
         # for 'www.cbc.ca' and  'www.inat.fr/'. this site won't responce without uagent
         import ua_generator
         ua       = ua_generator.generate()
-        response = requests.head(url, allow_redirects=True,verify=False, timeout=20,headers=ua.headers.get())   
+        response = requests.head(url, allow_redirects=True,verify=False, timeout=15,headers=ua.headers.get())   
 
     tmp_res = [resp.url for resp in response.history + [response] if not any(x in resp.url for x in EXCL_REDIR_ARRAY)][-1] if response.history else response.url
     return '' if not isinstance(tmp_res, str) else tmp_res
@@ -231,8 +270,9 @@ def get_gold_url(url , return_default_value = False):
     if return_default_value : return url
 
     url = standartize_url(url)
-    url = get_expanded_url(url)                                   
-    url = clean_url(url)   
+    url = get_expanded_url(url) 
+    if len(url)>0:                                  
+        url = clean_url(url)    
 
     return url
 
@@ -243,3 +283,84 @@ def get_host_url(url :str) -> str:
     o=urllib.parse.urlsplit(url)
     return o.scheme+'://'+o.netloc
 
+
+# URL compare
+
+def get_url_host_parts(host:str):
+    host = host.split('.')[::-1]
+    # weight_corr=0
+    if host[-1] in ['m','www']: 
+        # host[-1] = None 
+        host.pop()
+        # weight_corr=1
+    return host
+
+def get_url_path_parts(path: str):
+    REMOVE_FROM_ARRAY =[
+        'start' ,
+        'pricing',
+        'price' ,
+        'ru' ,
+        'en' ,
+        'de' ,
+        'index.html' ,
+        'index.php' ,
+        'feed' ,
+    ]
+
+    path   = [x for x in path.split('/') if x]
+
+    for key in REMOVE_FROM_ARRAY:
+        if key in path : path.remove(key) 
+
+    return path
+    
+
+def f(a1: list, a2: list, fuzzy: bool = False):
+    iter = itertools.zip_longest(a1,a2)
+    tpl  = tuple(iter)
+
+    counter = 0
+    length  = len(tpl)
+    counter_alt = (1+length)/2*length
+
+    if length >0:
+        for i in tpl:
+            if fuzzy:
+                from rapidfuzz import fuzz
+                counter+= fuzz.ratio(i[0], i[1])/100
+            else:
+                if i[0] == i[1]: counter+=1
+        return ((counter/length) , length)
+    else:
+        return (1,1)
+
+def compare_urls(url1: str, url2 :str):
+
+    _ ,netloc1 ,path1 ,_ ,_ = urllib.parse.urlsplit(url1)
+    _ ,netloc2 ,path2 ,_ ,_ = urllib.parse.urlsplit(url2)
+
+    netloc1 = get_url_host_parts(netloc1)
+    netloc2 = get_url_host_parts(netloc2)
+
+    path1   = get_url_path_parts(path1)
+    path2   = get_url_path_parts(path2)
+
+    netloc_m = max(len(netloc1),len(netloc2))
+
+    netloc_similarity ,netloc_similarity_weight = f(netloc1, netloc2)
+    path_similarity   , path_similarity_weight  = f(path1  , path2  ,fuzzy=True)
+
+    # correction for www
+    # netloc_similarity=(netloc_similarity/netloc_similarity_weight)*(netloc_similarity_weight+weight_corr)
+    # netloc_similarity_weight+=weight_corr
+
+    # print(netloc_similarity)
+    # print(path_similarity)
+
+    return (netloc_similarity*  netloc_similarity_weight*netloc_m   +      path_similarity_weight * path_similarity ) / (
+                                netloc_similarity_weight*netloc_m   +      path_similarity_weight )
+
+
+def is_url_for_selling(url: str)-> bool:
+    return len(re.findall(r"http.?://(w{2,3}\d+)", url))>0
