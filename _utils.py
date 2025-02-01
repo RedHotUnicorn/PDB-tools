@@ -73,23 +73,72 @@ def get_readable_content(html: str) -> str:
     m_article = morss.get_article(html)
     m_bestnode = morss.get_best_node(morss.parse(html))
     if m_bestnode is not None:
-        h = lxml.etree.tostring(m_bestnode, method='html')
+        m_bestnode = lxml.etree.tostring(m_bestnode, method='html')
 
-    return m_article or m_bestnode
+    ret = m_article or m_bestnode
+    if isinstance(ret, (bytes, bytearray)):
+        ret= ret.decode()
 
+    return ret
+
+
+# 0680e236039a58e18a908fa11bd5994d
+# https://habr.com/ru/articles/856776/
 IMG_CSS_SETTING="""
+    @page {
+        size: A4 portrait !important;
+        width       : 100%  !important;
+    }
     img {
-        width       : 85%;
-        height      : auto;
+        max-width       : 85%;
+        max-height       : auto;
+        /*width       : 85%;
+        height      : auto;*/
         }
+        
 
     pre:has(code)  {
         background  : #E8E8E8;
         overflow    : auto;
         white-space : pre-wrap !important;
         }
+
+    /* #########################################
+    
+    *[background-image] > * {
+        display: block;
+        position: relative;
+        background: no-repeat center;
+        background-size: cover;
+        background-image: inherit;
+        margin: 0 auto;
+        z-index: 2;
+    }
+    
+
+    *[style*="background-image:"] > * {
+        display: block;
+        position: relative;
+        background: no-repeat center;
+        background-size: cover;
+        background-image: inherit;
+        margin: 0 auto;
+        z-index: 2;
+    }
+
+    ######################################### */
+
+    *[background-image] > * {
+        background-image: inherit;
+    }
+    
+
+    *[style*="background-image:"] > * {
+        background-image: inherit;
+    }
+    
         
-/*Doesn't work VVVVV */
+/*Doesn't work VVVVV */c
     th, td {
         border-bottom: 1px solid #ddd !important;
         }
@@ -110,25 +159,6 @@ def get_pdf_from_html(html: str, name:str='test' ):
                                                         , dpi=DPI_SETTING)
 
 
-STEAL_SETTINGS={
-    0 :{
-          "step"    : "headers request"
-        , "postfix" : ".00.headers"
-        , "ext"     : "json"
-        , 'store'   : True
-        , "cond"    : '"{ctype}"=="image/png"'
-    },
-    1 :{
-          "step"    : "original content request"
-        , "postfix" : ".01.orig"
-        , "ext"     : None
-        , 'store'   : True
-    }
-
-}
-
-# cond=STEAL_SETTINGS[0]['cond']
-# print(eval(cond.format(ctype='image/png')))
 
 @Error_Handler
 def save_data_to_file(file_name:str , in_str:str,return_default_value : bool = False) -> bool:
@@ -142,29 +172,67 @@ def save_data_to_file(file_name:str , in_str:str,return_default_value : bool = F
 
 
 @Error_Handler
-def download(url: str ,return_default_value : bool = False) -> bool:
+def download( dowload_url : str 
+             ,hash : str
+             ,touch_only : bool= False 
+             ,avoid: bool = False
+             ,return_default_value : bool = False
+    ) -> bool:
     if return_default_value : return False
+    if avoid : return True
+    url = dowload_url
 
-    import minify_html
+    iter  = OUT_FOLDER.glob(hash+'.*')
+    names = [x.name for x in iter]
 
+    response = get_request_head(url)
+    headers = dict(response.headers)
+    headers_cleaned = {key : val for key, val in headers.items() if key in ("Content-Type", "Date" ,"Content-Encoding","Content-Length")}
+
+    import time
+    if "Date"  not in headers_cleaned:
+        headers_cleaned["Date"] = time.strftime('%a, %d %b %Y %H:%M:%S GMT', time.localtime())
+    headers_cleaned['status_code']=response.status_code
     
+    import json
+
+    with open(OUT_FOLDER / (hash+".headers.json"), "w") as f:
+        json.dump(headers_cleaned, f, indent=4, sort_keys=True)
+    
+    if touch_only : return True
 
     html = get_html_from_url_as_str(url)
-    
-    get_meta_info(html)
-    hash = get_hash(url)
+    meta = get_meta_info(html)
+
+    with open(OUT_FOLDER / (hash+".meta.json"), "w") as f:
+        json.dump(meta, f, indent=4, sort_keys=True)
+
     save_data_to_file(hash+'.html',in_str=html)
     readable = get_readable_content(html)
-    get_pdf_from_html(readable,hash)
-    return True
+    # print(hash)
+    # print(type(readable))
+    # print(readable)
+    if readable is not None:
+        save_data_to_file(hash+'.readable.html',in_str=readable)
+        get_pdf_from_html(readable,hash)
+        return True
+    else:
+        return False
 
 def get_meta_info(html):
     bs   = BeautifulSoup(  html, features="lxml")
-    all_titles       = [x.get_text() for x in bs.find_all('title')]
+    all_titles      = [x.get_text() for x in bs.find_all('title')]
     title           = all_titles[0] if all_titles  else None
     # print(title)
-    desc = bs.find('meta', attrs={'name': 'description'})['content']
+    all_desc     = [x['content'] for x in bs.find_all('meta', attrs={'name': 'description'})]
+    desc         = all_desc[0] if all_desc  else None
+
+    all_desc2     = [x['content'] for x in bs.find_all('meta', attrs={'property': 'og:description'})]
+    desc2        = all_desc2[0] if all_desc2  else None
+
     # print(desc)
+
+    return {"title": title , "description": desc or desc2 }
 
 ##################################################
 # WORK WITH SOURCE
@@ -205,6 +273,17 @@ EXCL_REDIR_ARRAY    = [
     # , "www."
 ]
 
+def get_request_head(url :str):
+    try:
+        response = requests.head(url, allow_redirects=True,verify=False, timeout=5)                                 # https://stackoverflow.com/questions/70560247/bypassing-eu-consent-request
+    except:
+        # for 'www.cbc.ca' and  'www.inat.fr/'. this site won't responce without uagent
+        import ua_generator
+        ua       = ua_generator.generate()
+        response = requests.head(url, allow_redirects=True,verify=False, timeout=15,headers=ua.headers.get())  
+    return response
+
+
 @Error_Handler
 def get_expanded_url(url, return_default_value = False):
     """
@@ -221,13 +300,8 @@ def get_expanded_url(url, return_default_value = False):
     the last one is not nessesary. so we need exclude it
     """
     if return_default_value : return ''
-    try:
-        response = requests.head(url, allow_redirects=True,verify=False, timeout=5)                                 # https://stackoverflow.com/questions/70560247/bypassing-eu-consent-request
-    except:
-        # for 'www.cbc.ca' and  'www.inat.fr/'. this site won't responce without uagent
-        import ua_generator
-        ua       = ua_generator.generate()
-        response = requests.head(url, allow_redirects=True,verify=False, timeout=15,headers=ua.headers.get())   
+ 
+    response = get_request_head(url)
 
     tmp_res = [resp.url for resp in response.history + [response] if not any(x in resp.url for x in EXCL_REDIR_ARRAY)][-1] if response.history else response.url
     return '' if not isinstance(tmp_res, str) else tmp_res
